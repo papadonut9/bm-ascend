@@ -1,28 +1,34 @@
-#include <unistd.h>
-#include <termios.h>
-#include <stdlib.h>
+/***  include  ***/
 #include <ctype.h>
-#include <stdio.h>
 #include <errno.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <termios.h>
+#include <unistd.h>
 
+/***  data  ***/
 struct termios orig_termios;
 
-void errhandl(const char *s){
+/***  terminal  ***/
+void errhandl(const char *s)
+{
     perror(s);
     exit(69);
 }
 
-void disableRawMode(){
+void disableRawMode()
+{
     if (tcsetattr(STDIN_FILENO, TCSAFLUSH, &orig_termios) == -1)
         errhandl("tcsetattr");
 }
 
-void enableRawMode(){
-    if(tcgetattr(STDIN_FILENO, &orig_termios) == -1)
+void enableRawMode()
+{
+    if (tcgetattr(STDIN_FILENO, &orig_termios) == -1)
         errhandl("tcgetattr");
 
     atexit(disableRawMode);
-    
+
     struct termios raw = orig_termios;
     raw.c_iflag &= ~(BRKINT | ICRNL | INPCK | ISTRIP | IXON);
     raw.c_oflag &= ~(OPOST);
@@ -31,25 +37,31 @@ void enableRawMode(){
     raw.c_cc[VMIN] = 0;
     raw.c_cc[VTIME] = 1;
 
-    if(tcsetattr(STDIN_FILENO, TCSAFLUSH, &raw) == -1)
+    if (tcsetattr(STDIN_FILENO, TCSAFLUSH, &raw) == -1)
         errhandl("tcsetattr");
 }
+
+/***  init utils  ***/
 int main()
 {
     enableRawMode();
 
-    while(1){
+    while (1)
+    {
         char c = '\0';
-        if(read(STDIN_FILENO, &c, 1) == -1 && errno != EAGAIN)      // EAGAIN won't work on CYGWIN systems
+        if (read(STDIN_FILENO, &c, 1) == -1 && errno != EAGAIN) // EAGAIN won't work on CYGWIN systems
             errhandl("read");
-        if (iscntrl(c)){
+        if (iscntrl(c))
+        {
             printf("%d\r\n", c);
-        }else{
+        }
+        else
+        {
             printf("%d ('%c')\r\n", c, c);
         }
-        if(c == 'q')
+        if (c == 'q')
             break;
     }
-    
+
     return 0;
 }
