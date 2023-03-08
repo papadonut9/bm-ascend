@@ -1,4 +1,5 @@
-/***  include  ***/
+/*** includes ***/
+
 #include <ctype.h>
 #include <errno.h>
 #include <stdio.h>
@@ -7,27 +8,30 @@
 #include <termios.h>
 #include <unistd.h>
 
-/***  defines  ***/
+/*** defines ***/
+
 #define CTRL_KEY(k) ((k)&0x1f)
 
-/***  data  ***/
+/*** data ***/
+
 struct editorConfig
 {
     int screenrows;
     int screencols;
     struct termios orig_termios;
-} E;
+};
 
-// struct editorconfig E;
+struct editorConfig E;
 
-/***  terminal  ***/
+/*** terminal ***/
+
 void errhandl(const char *s)
 {
     write(STDOUT_FILENO, "\x1b[2J", 4);
     write(STDOUT_FILENO, "\x1b[H", 3);
 
     perror(s);
-    exit(69);
+    exit(1);
 }
 
 void disableRawMode()
@@ -40,13 +44,12 @@ void enableRawMode()
 {
     if (tcgetattr(STDIN_FILENO, &E.orig_termios) == -1)
         errhandl("tcgetattr");
-
     atexit(disableRawMode);
 
     struct termios raw = E.orig_termios;
     raw.c_iflag &= ~(BRKINT | ICRNL | INPCK | ISTRIP | IXON);
     raw.c_oflag &= ~(OPOST);
-    raw.c_cflag |= ~(CS8);
+    raw.c_cflag |= (CS8);
     raw.c_lflag &= ~(ECHO | ICANON | IEXTEN | ISIG);
     raw.c_cc[VMIN] = 0;
     raw.c_cc[VTIME] = 1;
@@ -59,7 +62,6 @@ char editorReadKey()
 {
     int nread;
     char c;
-
     while ((nread = read(STDIN_FILENO, &c, 1)) != 1)
     {
         if (nread == -1 && errno != EAGAIN)
@@ -68,34 +70,37 @@ char editorReadKey()
     return c;
 }
 
-int getCursorPosition(int *rows, int *cols){
+int getCursorPosition(int *rows, int *cols)
+{
     char buf[32];
     unsigned int i = 0;
 
     if (write(STDOUT_FILENO, "\x1b[6n", 4) != 4)
         return -1;
 
-    while(i <sizeof(buf) -1){
-        if(read(STDIN_FILENO, &buf[i], 1) != 1)
+    while (i < sizeof(buf) - 1)
+    {
+        if (read(STDIN_FILENO, &buf[i], 1) != 1)
             break;
-        if(buf[i] == 'R')
+        if (buf[i] == 'R')
             break;
         i++;
     }
     buf[i] = '\0';
-    printf("\r\n&buf[1]: '%s'\r\n", &buf[1]);
 
-    editorReadKey();
+    if (buf[0] != '\x1b' || buf[1] != '[')
+        return -1;
+    if (sscanf(&buf[2], "%d;%d", rows, cols) != 2)
+        return -1;
 
-    return -1;
+    return 0;
 }
 
 int getWindowSize(int *rows, int *cols)
 {
     struct winsize ws;
 
-    // providing fallback method to fetch window size, since ioctl() isn't guaranteed to work on all systems.
-    if (1 || ioctl(STDOUT_FILENO, TIOCGWINSZ, &ws) == -1 || ws.ws_col == 0)     // adding 1 at start of if for debug
+    if (1 || ioctl(STDOUT_FILENO, TIOCGWINSZ, &ws) == -1 || ws.ws_col == 0)
     {
         if (write(STDOUT_FILENO, "\x1b[999C\x1b[999B", 12) != 12)
             return -1;
@@ -109,13 +114,15 @@ int getWindowSize(int *rows, int *cols)
     }
 }
 
-/***  output  ***/
+/*** output ***/
+
 void editorDrawRows()
 {
-    // not this is a poor attempt by me to replicate vim's tildes to represent line numbers
     int lines;
-    for (lines = 0; lines < 24; lines++)
+    for (lines = 0; lines < E.screenrows; lines++)
+    {
         write(STDOUT_FILENO, "~\r\n", 3);
+    }
 }
 
 void editorRefreshScreen()
@@ -124,10 +131,12 @@ void editorRefreshScreen()
     write(STDOUT_FILENO, "\x1b[H", 3);
 
     editorDrawRows();
+
     write(STDOUT_FILENO, "\x1b[H", 3);
 }
 
-/***  input  ***/
+/*** input ***/
+
 void editorProcessKeypress()
 {
     char c = editorReadKey();
@@ -137,19 +146,13 @@ void editorProcessKeypress()
     case CTRL_KEY('q'):
         write(STDOUT_FILENO, "\x1b[2J", 4);
         write(STDOUT_FILENO, "\x1b[H", 3);
-
-        // could've used atexit(), but the error
-        // message printed by errhandl() would've been wiped out.
-
-        exit(69);
-        break;
-
-    default:
+        exit(0);
         break;
     }
 }
 
-/***  init utils  ***/
+/*** init utils ***/
+
 void editorInit()
 {
     if (getWindowSize(&E.screenrows, &E.screencols) == -1)
@@ -166,7 +169,6 @@ int main()
         editorRefreshScreen();
         editorProcessKeypress();
     }
-    // disabled key output printing in debug. will enable that in next itr
 
     return 0;
 }
