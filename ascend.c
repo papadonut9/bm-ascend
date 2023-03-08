@@ -10,7 +10,7 @@
 #include <unistd.h>
 
 /*** defines ***/
-
+#define ASCEND_VERSION "0.1.3"
 #define CTRL_KEY(k) ((k)&0x1f)
 
 /*** data ***/
@@ -147,9 +147,21 @@ void editorDrawRows( struct abuf *ab)
     int lines;
     for (lines = 0; lines < E.screenrows; lines++)
     {
-        // commenting out this line to fix the last line bug
-        // write(STDOUT_FILENO, "~\r\n", 3);
-        abAppend(ab, "~", 1);
+        if(lines == E.screenrows / 3){
+            char welcome[80];
+            int welcomelen = snprintf(welcome, sizeof(welcome),
+                "Blackmagic Ascend -- version %s", ASCEND_VERSION
+            );
+            if(welcomelen > E.screencols) 
+                welcomelen = E.screencols;
+            abAppend(ab, welcome, welcomelen);
+        }
+        else{
+
+            // commenting out this line to fix the last line bug
+            // write(STDOUT_FILENO, "~\r\n", 3);
+            abAppend(ab, "~", 1);
+        }
 
         abAppend(ab, "\x1b[K", 3);      // erase in-line [http://vt100.net/docs/vt100-ug/chapter3.html#EL]
         if (lines < E.screenrows - 1)
