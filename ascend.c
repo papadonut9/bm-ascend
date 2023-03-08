@@ -57,6 +57,12 @@ char editorReadKey()
     return c;
 }
 
+/***  output  ***/
+void editorRefreshScreen()
+{
+    write(STDOUT_FILENO, "\x1b[2J", 4);
+}
+
 /***  input  ***/
 void editorProcessKeypress()
 {
@@ -79,7 +85,9 @@ int main()
     enableRawMode();
 
     while (1)
+        editorRefreshScreen();
         editorProcessKeypress();
+    // disabled key output printing in debug. will enable that in next itr
 
     return 0;
 }
