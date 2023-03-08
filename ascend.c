@@ -61,9 +61,19 @@ char editorReadKey()
 }
 
 /***  output  ***/
+void editorDrawRows(){
+    // not this is a poor attempt by me to replicate vim's tildes to represent line numbers
+    int rows;
+    for(rows=0; rows < 24; rows++)
+        write(STDOUT_FILENO, "~\r\n", 3);
+}
+
 void editorRefreshScreen()
 {
     write(STDOUT_FILENO, "\x1b[2J", 4);
+    write(STDOUT_FILENO, "\x1b[H", 3);
+
+    editorDrawRows();
     write(STDOUT_FILENO, "\x1b[H", 3);
 }
 
@@ -77,6 +87,10 @@ void editorProcessKeypress()
     case CTRL_KEY('q'):
         write(STDOUT_FILENO, "\x1b[2J", 4);
         write(STDOUT_FILENO, "\x1b[H", 3);
+
+        // could've used atexit(), but the error
+        // message printed by errhandl() would've been wiped out.
+
         exit(69);
         break;
 
@@ -92,7 +106,7 @@ int main()
 
     while (1)
         editorRefreshScreen();
-        editorProcessKeypress();
+    editorProcessKeypress();
     // disabled key output printing in debug. will enable that in next itr
 
     return 0;
