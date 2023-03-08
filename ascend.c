@@ -123,7 +123,12 @@ void editorDrawRows()
     int lines;
     for (lines = 0; lines < E.screenrows; lines++)
     {
-        write(STDOUT_FILENO, "~\r\n", 3);
+        // commenting out this line to fix the last line bug
+        // write(STDOUT_FILENO, "~\r\n", 3);
+        write(STDOUT_FILENO, "~", 1);
+
+        if (lines < E.screenrows - 1)
+            write(STDOUT_FILENO, "\r\n", 2);
     }
 }
 
