@@ -142,28 +142,33 @@ void abFree(struct abuf *ab){
 
 /*** output ***/
 
-void editorDrawRows()
+void editorDrawRows( struct abuf *ab)
 {
     int lines;
     for (lines = 0; lines < E.screenrows; lines++)
     {
         // commenting out this line to fix the last line bug
         // write(STDOUT_FILENO, "~\r\n", 3);
-        write(STDOUT_FILENO, "~", 1);
+        abAppend(ab, "~", 1);
 
         if (lines < E.screenrows - 1)
-            write(STDOUT_FILENO, "\r\n", 2);
+            abAppend(ab, "\r\n", 2);
     }
 }
 
 void editorRefreshScreen()
 {
-    write(STDOUT_FILENO, "\x1b[2J", 4);
-    write(STDOUT_FILENO, "\x1b[H", 3);
+    struct abuf ab = ABUF_INIT;
 
-    editorDrawRows();
+    abAppend(&ab, "\x1b[2J", 4);
+    abAppend(&ab, "\x1b[H", 3);
 
-    write(STDOUT_FILENO, "\x1b[H", 3);
+    editorDrawRows(&ab);
+
+    abAppend(&ab, "\x1b[H", 3);
+
+    write(STDOUT_FILENO, ab.b, ab.len);
+    abFree(&ab);
 }
 
 /*** input ***/
