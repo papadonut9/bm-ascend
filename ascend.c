@@ -13,7 +13,8 @@
 #define ASCEND_VERSION "0.1.3"
 #define CTRL_KEY(k) ((k)&0x1f)
 
-enum editorKey{
+enum editorKey
+{
     ARROW_LEFT = 1000,
     ARROW_RIGHT,
     ARROW_UP,
@@ -66,7 +67,7 @@ void enableRawMode()
     raw.c_cflag |= (CS8);
     raw.c_lflag &= ~(ECHO | ICANON | IEXTEN | ISIG);
     raw.c_cc[VMIN] = 0;
-    raw.c_cc[VTIME] = 10;    // adjust VTIME temporarily to actually see keypresses
+    raw.c_cc[VTIME] = 10; // adjust VTIME temporarily to actually see keypresses
 
     if (tcsetattr(STDIN_FILENO, TCSAFLUSH, &raw) == -1)
         errhandl("tcsetattr");
@@ -81,69 +82,76 @@ int editorReadKey()
         if (nread == -1 && errno != EAGAIN)
             errhandl("read");
     }
-    
-    if(c == '\x1b'){
+
+    if (c == '\x1b')
+    {
         char seq[3];
 
-        if(read(STDIN_FILENO, &seq[0], 1) != 1)
+        if (read(STDIN_FILENO, &seq[0], 1) != 1)
             return '\x1b';
-        if(read(STDIN_FILENO, &seq[1], 1) != 1)
+        if (read(STDIN_FILENO, &seq[1], 1) != 1)
             return '\x1b';
 
-        if(seq[0] == '['){
-            if(seq[1] >= '0' && seq[1] <= '9'){
-                if(read(STDIN_FILENO, &seq[2], 1) != 1)
+        if (seq[0] == '[')
+        {
+            if (seq[1] >= '0' && seq[1] <= '9')
+            {
+                if (read(STDIN_FILENO, &seq[2], 1) != 1)
                     return '\x1b';
-                if(seq[2] == '~'){
+                if (seq[2] == '~')
+                {
                     switch (seq[1])
                     {
-                    case '1': 
+                    case '1':
                         return HOME_KEY;
                     case '3':
                         return DEL_KEY;
-                    case '4': 
+                    case '4':
                         return END_KEY;
                     case '5':
                         return PAGE_UP;
                     case '6':
                         return PAGE_DOWN;
-                    case '7': 
+                    case '7':
                         return HOME_KEY;
-                    case '8': 
+                    case '8':
                         return END_KEY;
                     }
                 }
             }
-            else{
-                switch(seq[1]){
-                case 'A': 
+            else
+            {
+                switch (seq[1])
+                {
+                case 'A':
                     return ARROW_UP;
-                case 'B': 
+                case 'B':
                     return ARROW_DOWN;
-                case 'C': 
+                case 'C':
                     return ARROW_RIGHT;
-                case 'D': 
+                case 'D':
                     return ARROW_LEFT;
-                case 'H': 
+                case 'H':
                     return HOME_KEY;
-                case 'F': 
+                case 'F':
                     return END_KEY;
                 }
             }
         }
-        else if(seq[0] == 'O'){
-            switch(seq[1]){
-                case 'H': 
-                    return HOME_KEY;
-                case 'F': 
-                    return END_KEY;
+        else if (seq[0] == 'O')
+        {
+            switch (seq[1])
+            {
+            case 'H':
+                return HOME_KEY;
+            case 'F':
+                return END_KEY;
             }
         }
         return '\x1b';
     }
     else
         return c;
-    
 }
 
 int getCursorPosition(int *rows, int *cols)
@@ -193,17 +201,22 @@ int getWindowSize(int *rows, int *cols)
 }
 
 /***  append buffer  ***/
-struct abuf{
+struct abuf
+{
     char *b;
     int len;
 };
 
-#define ABUF_INIT {NULL, 0}
+#define ABUF_INIT \
+    {             \
+        NULL, 0   \
+    }
 
-void abAppend(struct abuf *ab, const char *s, int len){
+void abAppend(struct abuf *ab, const char *s, int len)
+{
     char *new = realloc(ab->b, ab->len + len);
 
-    if(new == NULL)
+    if (new == NULL)
         return;
 
     memcpy(&new[ab->len], s, len);
@@ -211,43 +224,46 @@ void abAppend(struct abuf *ab, const char *s, int len){
     ab->len += len;
 }
 
-void abFree(struct abuf *ab){
+void abFree(struct abuf *ab)
+{
     free(ab->b);
 }
 
 /*** output ***/
 
-void editorDrawRows( struct abuf *ab)
+void editorDrawRows(struct abuf *ab)
 {
     int lines;
     for (lines = 0; lines < E.screenrows; lines++)
     {
-        if(lines == E.screenrows / 3){
+        if (lines == E.screenrows / 3)
+        {
             char welcome[80];
             int welcomelen = snprintf(welcome, sizeof(welcome),
-                "Blackmagic Ascend -- version %s", ASCEND_VERSION
-            );
-            if(welcomelen > E.screencols) 
+                                      "Blackmagic Ascend -- version %s", ASCEND_VERSION);
+            if (welcomelen > E.screencols)
                 welcomelen = E.screencols;
-            
+
             int padding = (E.screencols - welcomelen) / 2;
-            if(padding){
+            if (padding)
+            {
                 abAppend(ab, "~", 1);
                 padding--;
             }
-            while(padding--)
+            while (padding--)
                 abAppend(ab, " ", 1);
 
             abAppend(ab, welcome, welcomelen);
         }
-        else{
+        else
+        {
 
             // commenting out this line to fix the last line bug
             // write(STDOUT_FILENO, "~\r\n", 3);
             abAppend(ab, "~", 1);
         }
 
-        abAppend(ab, "\x1b[K", 3);      // erase in-line [http://vt100.net/docs/vt100-ug/chapter3.html#EL]
+        abAppend(ab, "\x1b[K", 3); // erase in-line [http://vt100.net/docs/vt100-ug/chapter3.html#EL]
         if (lines < E.screenrows - 1)
             abAppend(ab, "\r\n", 2);
     }
@@ -257,16 +273,16 @@ void editorRefreshScreen()
 {
     struct abuf ab = ABUF_INIT;
 
-    abAppend(&ab, "\x1b[?25l", 6);  // reset mode [http://vt100.net/docs/vt100-ug/chapter3.html#RM]
+    abAppend(&ab, "\x1b[?25l", 6); // reset mode [http://vt100.net/docs/vt100-ug/chapter3.html#RM]
     abAppend(&ab, "\x1b[H", 3);
 
     editorDrawRows(&ab);
 
     char buf[32];
-    snprintf(buf, sizeof(buf), "\x1b[%d;%dH", E.cy+1, E.cx+1);
+    snprintf(buf, sizeof(buf), "\x1b[%d;%dH", E.cy + 1, E.cx + 1);
     abAppend(&ab, buf, strlen(buf));
 
-    abAppend(&ab, "\x1b[?25h", 6);  // set mode [http://vt100.net/docs/vt100-ug/chapter3.html#SM]
+    abAppend(&ab, "\x1b[?25h", 6); // set mode [http://vt100.net/docs/vt100-ug/chapter3.html#SM]
 
     write(STDOUT_FILENO, ab.b, ab.len);
     abFree(&ab);
@@ -274,23 +290,24 @@ void editorRefreshScreen()
 
 /*** input ***/
 
-void editorMoveCursor(int key){
+void editorMoveCursor(int key)
+{
     switch (key)
     {
     case ARROW_LEFT:
-        if(E.cx != 0)     
+        if (E.cx != 0)
             E.cx--;
         break;
     case ARROW_RIGHT:
-        if(E.cx != E.screencols - 1)
+        if (E.cx != E.screencols - 1)
             E.cx++;
         break;
     case ARROW_UP:
-        if(E.cy != 0)
+        if (E.cy != 0)
             E.cy--;
         break;
     case ARROW_DOWN:
-        if(E.cy != E.screenrows - 1)
+        if (E.cy != E.screenrows - 1)
             E.cy++;
         break;
     }
@@ -309,21 +326,21 @@ void editorProcessKeypress()
         break;
 
     case HOME_KEY:
-      E.cx = 0;
-      break;
+        E.cx = 0;
+        break;
 
     case END_KEY:
-      E.cx = E.screencols - 1;
-      break;
+        E.cx = E.screencols - 1;
+        break;
 
     case PAGE_UP:
     case PAGE_DOWN:
-        {
-            int times = E.screenrows;
-            while(times--)
-                editorMoveCursor(c == PAGE_UP ? ARROW_UP : ARROW_DOWN);
-        }
-        break;
+    {
+        int times = E.screenrows;
+        while (times--)
+            editorMoveCursor(c == PAGE_UP ? ARROW_UP : ARROW_DOWN);
+    }
+    break;
 
     case ARROW_UP:
     case ARROW_DOWN:
