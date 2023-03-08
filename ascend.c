@@ -10,7 +10,11 @@
 #define CTRL_KEY(k) ((k)&0x1f)
 
 /***  data  ***/
-struct termios orig_termios;
+struct editorConfig{
+    struct termios orig_termios;
+}E;
+
+// struct editorconfig E;
 
 /***  terminal  ***/
 void errhandl(const char *s)
@@ -24,18 +28,18 @@ void errhandl(const char *s)
 
 void disableRawMode()
 {
-    if (tcsetattr(STDIN_FILENO, TCSAFLUSH, &orig_termios) == -1)
+    if (tcsetattr(STDIN_FILENO, TCSAFLUSH, &E.orig_termios) == -1)
         errhandl("tcsetattr");
 }
 
 void enableRawMode()
 {
-    if (tcgetattr(STDIN_FILENO, &orig_termios) == -1)
+    if (tcgetattr(STDIN_FILENO, &E.orig_termios) == -1)
         errhandl("tcgetattr");
 
     atexit(disableRawMode);
 
-    struct termios raw = orig_termios;
+    struct termios raw = E.orig_termios;
     raw.c_iflag &= ~(BRKINT | ICRNL | INPCK | ISTRIP | IXON);
     raw.c_oflag &= ~(OPOST);
     raw.c_cflag |= ~(CS8);
