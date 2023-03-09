@@ -15,7 +15,7 @@
 #include <unistd.h>
 
 /*** defines ***/
-#define ASCEND_VERSION "0.2.56 -prerelease"
+#define ASCEND_VERSION "0.2.57 -prerelease"
 #define CTRL_KEY(k) ((k)&0x1f)
 
 enum editorKey
@@ -41,6 +41,7 @@ typedef struct erow{
 struct editorConfig
 {
     int cx, cy;
+    int rowoffset;
     int screenrows;
     int screencols;
     int numrows;
@@ -275,12 +276,21 @@ void abFree(struct abuf *ab)
 
 /*** output ***/
 
+void editorScroll(){
+    if(E.cy < E.rowoffset)
+        E.rowoffset = E.cy;
+
+    if(E.cy >= E.rowoffset + E.screenrows)
+        E.rowoffset = E.cy - E.screenrows + 1;
+}
+
 void editorDrawRows(struct abuf *ab)
 {
     int lines;
     for (lines = 0; lines < E.screenrows; lines++)
     {
-        if(lines >= E.numrows){
+        int filerow = lines + E.rowoffset;
+        if(filerow >= E.numrows){
             if (E.numrows == 0 && lines == E.screenrows / 3)
             {
                 char welcome[80];
@@ -309,9 +319,10 @@ void editorDrawRows(struct abuf *ab)
             }
         }
         else{
-            int len = E.row[lines].size;
+            int len = E.row[filerow].size;
             if(len > E.screencols)
                 len = E.screencols;
+            abAppend(ab, E.row[filerow].chars, len);
             
             abAppend(ab, E.row[lines].chars, len);
         }
@@ -324,6 +335,7 @@ void editorDrawRows(struct abuf *ab)
 
 void editorRefreshScreen()
 {
+    editorScroll();
     struct abuf ab = ABUF_INIT;
 
     abAppend(&ab, "\x1b[?25l", 6); // reset mode [http://vt100.net/docs/vt100-ug/chapter3.html#RM]
@@ -410,6 +422,7 @@ void editorInit()
 {
     E.cx = 0;
     E.cy = 0;
+    E.rowoffset = 0;
     E.numrows = 0;
     E.row = NULL;
 
