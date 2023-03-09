@@ -6,6 +6,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sys/ioctl.h>
+#include <sys/types.h>
 #include <termios.h>
 #include <unistd.h>
 
@@ -207,6 +208,19 @@ int getWindowSize(int *rows, int *cols)
     }
 }
 
+/***  file I/O  ***/ 
+
+void editorOpen(){
+    char *line = "Miami Mussy";    // getting a hardcoded string to fill erow during init
+    ssize_t linelen = 13;
+
+    E.row.size = linelen;
+    E.row.chars = malloc(linelen + 1);
+    memcpy(E.row.chars, line, linelen);
+    E.row.chars[linelen] = '\0';
+    E.numrows = 1;
+}
+
 /***  append buffer  ***/
 struct abuf
 {
@@ -374,6 +388,7 @@ int main()
 {
     enableRawMode();
     editorInit();
+    editorOpen();
 
     while (1)
     {
