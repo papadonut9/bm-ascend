@@ -15,7 +15,7 @@
 #include <unistd.h>
 
 /*** defines ***/
-#define ASCEND_VERSION "0.2.57 -prerelease"
+#define ASCEND_VERSION "0.2.58 -prerelease"
 #define CTRL_KEY(k) ((k)&0x1f)
 
 enum editorKey
@@ -324,7 +324,7 @@ void editorDrawRows(struct abuf *ab)
                 len = E.screencols;
             abAppend(ab, E.row[filerow].chars, len);
             
-            abAppend(ab, E.row[lines].chars, len);
+            
         }
 
         abAppend(ab, "\x1b[K", 3); // erase in-line [http://vt100.net/docs/vt100-ug/chapter3.html#EL]
