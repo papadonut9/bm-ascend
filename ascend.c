@@ -15,7 +15,7 @@
 #include <unistd.h>
 
 /*** defines ***/
-#define ASCEND_VERSION "0.2.58 -prerelease"
+#define ASCEND_VERSION "0.2.59 -prerelease"
 #define CTRL_KEY(k) ((k)&0x1f)
 
 enum editorKey
@@ -372,7 +372,7 @@ void editorMoveCursor(int key)
             E.cy--;
         break;
     case ARROW_DOWN:
-        if (E.cy != E.screenrows - 1)
+        if (E.cy < E.numrows)
             E.cy++;
         break;
     }
