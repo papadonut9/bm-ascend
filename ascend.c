@@ -42,6 +42,7 @@ struct editorConfig
 {
     int cx, cy;
     int rowoffset;
+    int coloffset;
     int screenrows;
     int screencols;
     int numrows;
@@ -277,11 +278,19 @@ void abFree(struct abuf *ab)
 /*** output ***/
 
 void editorScroll(){
+    // Vertical Scrolling
     if(E.cy < E.rowoffset)
         E.rowoffset = E.cy;
 
     if(E.cy >= E.rowoffset + E.screenrows)
         E.rowoffset = E.cy - E.screenrows + 1;
+
+    // Horizontal Scrolling
+    if(E.cx < E.coloffset)
+        E.coloffset = E.cx;
+
+    if(E.cx >= E.coloffset + E.screencols)
+        E.coloffset = E.cx - E.screencols + 1;
 }
 
 void editorDrawRows(struct abuf *ab)
@@ -319,10 +328,14 @@ void editorDrawRows(struct abuf *ab)
             }
         }
         else{
-            int len = E.row[filerow].size;
+            int len = E.row[filerow].size - E.coloffset;
+
+            if(len < 0)
+                len = 0;
+
             if(len > E.screencols)
                 len = E.screencols;
-            abAppend(ab, E.row[filerow].chars, len);
+            abAppend(ab, &E.row[filerow].chars[E.coloffset], len);
             
             
         }
@@ -364,7 +377,7 @@ void editorMoveCursor(int key)
             E.cx--;
         break;
     case ARROW_RIGHT:
-        if (E.cx != E.screencols - 1)
+        // if (E.cx != E.screencols - 1)
             E.cx++;
         break;
     case ARROW_UP:
@@ -423,6 +436,7 @@ void editorInit()
     E.cx = 0;
     E.cy = 0;
     E.rowoffset = 0;
+    E.coloffset = 0;
     E.numrows = 0;
     E.row = NULL;
 
