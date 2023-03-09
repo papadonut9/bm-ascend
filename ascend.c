@@ -15,7 +15,7 @@
 #include <unistd.h>
 
 /*** defines ***/
-#define ASCEND_VERSION "0.5.65 -prerelease"
+#define ASCEND_VERSION "0.5.66 -prerelease"
 #define CTRL_KEY(k) ((k)&0x1f)
 
 enum editorKey
@@ -217,6 +217,20 @@ int getWindowSize(int *rows, int *cols)
 }
 
 /***  row operations  ***/
+
+void editorUpdateRow(erow *row){
+    free(row->render);
+    row->render = malloc(row->size + 1);
+
+    int cnt;
+    int idx = 0;
+    for(cnt = 0; cnt < row->size; cnt++)
+        row->render[idx++] = row->chars[cnt];
+
+    row->render[idx] = '\0';
+    row->rowsize = idx;
+}
+
 void editorAppendRow(char *s, size_t len){
     E.row = realloc(E.row, sizeof(erow) * (E.numrows + 1));
     int at = E.numrows;
@@ -227,6 +241,7 @@ void editorAppendRow(char *s, size_t len){
 
     E.row[at].rowsize = 0;
     E.row[at].render = NULL;
+    editorUpdateRow(&E.row[at]);
 
     E.numrows++;
 }
