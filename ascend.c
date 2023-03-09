@@ -15,7 +15,7 @@
 #include <unistd.h>
 
 /*** defines ***/
-#define ASCEND_VERSION "0.3.63 -prerelease"
+#define ASCEND_VERSION "0.4.64 -prerelease"
 #define CTRL_KEY(k) ((k)&0x1f)
 
 enum editorKey
@@ -389,6 +389,10 @@ void editorMoveCursor(int key)
     case ARROW_RIGHT:
         if (row && E.cx < row->size)
             E.cx++;
+        else if (row && E.cx == row->size) {
+            E.cy++;
+            E.cx = 0;
+        }
         break;
     case ARROW_UP:
         if (E.cy != 0)
