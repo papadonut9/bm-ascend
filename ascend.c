@@ -15,7 +15,7 @@
 #include <unistd.h>
 
 /*** defines ***/
-#define ASCEND_VERSION "0.5.66 -prerelease"
+#define ASCEND_VERSION "0.5.67 -prerelease"
 #define CTRL_KEY(k) ((k)&0x1f)
 
 enum editorKey
@@ -349,14 +349,14 @@ void editorDrawRows(struct abuf *ab)
             }
         }
         else{
-            int len = E.row[filerow].size - E.coloffset;
+            int len = E.row[filerow].rowsize - E.coloffset;
 
             if(len < 0)
                 len = 0;
 
             if(len > E.screencols)
                 len = E.screencols;
-            abAppend(ab, &E.row[filerow].chars[E.coloffset], len);
+            abAppend(ab, &E.row[filerow].render[E.coloffset], len);
             
             
         }
