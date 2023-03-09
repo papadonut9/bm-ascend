@@ -11,7 +11,7 @@
 #include <unistd.h>
 
 /*** defines ***/
-#define ASCEND_VERSION "0.1.3"
+#define ASCEND_VERSION "0.2.53 -prerelease"
 #define CTRL_KEY(k) ((k)&0x1f)
 
 enum editorKey
@@ -211,8 +211,8 @@ int getWindowSize(int *rows, int *cols)
 /***  file I/O  ***/ 
 
 void editorOpen(){
-    char *line = "Miami Mussy";    // getting a hardcoded string to fill erow during init
-    ssize_t linelen = 13;
+    char *line = "Have you ever questioned the nature of your reality?";    // getting a hardcoded string to fill erow during init
+    ssize_t linelen = 52;
 
     E.row.size = linelen;
     E.row.chars = malloc(linelen + 1);
@@ -257,31 +257,40 @@ void editorDrawRows(struct abuf *ab)
     int lines;
     for (lines = 0; lines < E.screenrows; lines++)
     {
-        if (lines == E.screenrows / 3)
-        {
-            char welcome[80];
-            int welcomelen = snprintf(welcome, sizeof(welcome),
-                                      "Blackmagic Ascend -- version %s", ASCEND_VERSION);
-            if (welcomelen > E.screencols)
-                welcomelen = E.screencols;
-
-            int padding = (E.screencols - welcomelen) / 2;
-            if (padding)
+        if(lines >= E.numrows){
+            if (lines == E.screenrows / 3)
             {
-                abAppend(ab, "~", 1);
-                padding--;
+                char welcome[80];
+                int welcomelen = snprintf(welcome, sizeof(welcome),
+                                        "Blackmagic Ascend -- version %s", ASCEND_VERSION);
+                if (welcomelen > E.screencols)
+                    welcomelen = E.screencols;
+
+                int padding = (E.screencols - welcomelen) / 2;
+                if (padding)
+                {
+                    abAppend(ab, "~", 1);
+                    padding--;
+                }
+                while (padding--)
+                    abAppend(ab, " ", 1);
+
+                abAppend(ab, welcome, welcomelen);
             }
-            while (padding--)
-                abAppend(ab, " ", 1);
+            else
+            {
 
-            abAppend(ab, welcome, welcomelen);
+                // commenting out this line to fix the last line bug
+                // write(STDOUT_FILENO, "~\r\n", 3);
+                abAppend(ab, "~", 1);
+            }
         }
-        else
-        {
-
-            // commenting out this line to fix the last line bug
-            // write(STDOUT_FILENO, "~\r\n", 3);
-            abAppend(ab, "~", 1);
+        else{
+            int len = E.row.size;
+            if(len > E.screencols)
+                len = E.screencols;
+            
+            abAppend(ab, E.row.chars, len);
         }
 
         abAppend(ab, "\x1b[K", 3); // erase in-line [http://vt100.net/docs/vt100-ug/chapter3.html#EL]
