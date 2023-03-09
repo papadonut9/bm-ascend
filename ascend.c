@@ -15,7 +15,7 @@
 #include <unistd.h>
 
 /*** defines ***/
-#define ASCEND_VERSION "0.2.54 -prerelease"
+#define ASCEND_VERSION "0.2.55 -prerelease"
 #define CTRL_KEY(k) ((k)&0x1f)
 
 enum editorKey
@@ -274,7 +274,7 @@ void editorDrawRows(struct abuf *ab)
     for (lines = 0; lines < E.screenrows; lines++)
     {
         if(lines >= E.numrows){
-            if (lines == E.screenrows / 3)
+            if (E.numrows == 0 && lines == E.screenrows / 3)
             {
                 char welcome[80];
                 int welcomelen = snprintf(welcome, sizeof(welcome),
