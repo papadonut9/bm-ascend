@@ -1,5 +1,9 @@
 /*** includes ***/
 
+#define _DEFAULT_SOURCE
+#define _BSD_SOURCE
+#define _GNU_SOURCE
+
 #include <ctype.h>
 #include <errno.h>
 #include <stdio.h>
@@ -11,7 +15,7 @@
 #include <unistd.h>
 
 /*** defines ***/
-#define ASCEND_VERSION "0.2.53 -prerelease"
+#define ASCEND_VERSION "0.2.54 -prerelease"
 #define CTRL_KEY(k) ((k)&0x1f)
 
 enum editorKey
@@ -210,15 +214,27 @@ int getWindowSize(int *rows, int *cols)
 
 /***  file I/O  ***/ 
 
-void editorOpen(){
-    char *line = "Have you ever questioned the nature of your reality?";    // getting a hardcoded string to fill erow during init
-    ssize_t linelen = 52;
+void editorOpen(char *filename){
+    FILE *fp = fopen(filename, "r");
+    if(!fp)
+        errhandl("fopen");
 
-    E.row.size = linelen;
-    E.row.chars = malloc(linelen + 1);
-    memcpy(E.row.chars, line, linelen);
-    E.row.chars[linelen] = '\0';
-    E.numrows = 1;
+    char *line = NULL;
+    ssize_t linelen;
+    size_t linecap = 0;
+    linelen = getline(&line, &linecap, fp);
+    if(linelen != -1){
+
+        while(linelen > 0  && (line[linelen - 1] == '\n' || line[linelen - 1] == '\r'))
+            linelen -= 1 ;
+        E.row.size = linelen;
+        E.row.chars = malloc(linelen + 1);
+        memcpy(E.row.chars, line, linelen);
+        E.row.chars[linelen] = '\0';
+        E.numrows = 1;
+    }
+    free(line);
+    fclose(fp);
 }
 
 /***  append buffer  ***/
@@ -393,11 +409,13 @@ void editorInit()
         errhandl("getWindowSize");
 }
 
-int main()
+int main(int argc, char *argv[])
 {
     enableRawMode();
     editorInit();
-    editorOpen();
+
+    if(argc >= 2)
+        editorOpen(argv[1]);
 
     while (1)
     {
