@@ -15,7 +15,7 @@
 #include <unistd.h>
 
 /*** defines ***/
-#define ASCEND_VERSION "0.7.71 -prerelease"
+#define ASCEND_VERSION "0.7.72 -prerelease"
 #define ASCEND_TAB_STOP 8
 #define CTRL_KEY(k) ((k)&0x1f)
 
@@ -219,6 +219,18 @@ int getWindowSize(int *rows, int *cols)
 }
 
 /***  row operations  ***/
+
+int editorRowCxToRx(erow *row, int cx){
+    int rx = 0;
+    int cnt;
+
+    for(cnt = 0; cnt < cx; cnt++){
+        if(row->chars[cnt] == '\t')
+            rx += (ASCEND_TAB_STOP - 1) - (rx % ASCEND_TAB_STOP);
+        rx++;
+    }
+    return rx;
+}
 
 void editorUpdateRow(erow *row){
     int tabs  = 0;
