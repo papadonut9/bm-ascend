@@ -15,7 +15,8 @@
 #include <unistd.h>
 
 /*** defines ***/
-#define ASCEND_VERSION "0.6.68 -prerelease"
+#define ASCEND_VERSION "0.7.69 -prerelease"
+#define ASCEND_TAB_STOP 8
 #define CTRL_KEY(k) ((k)&0x1f)
 
 enum editorKey
@@ -227,13 +228,13 @@ void editorUpdateRow(erow *row){
             tabs++;
     
     free(row->render);
-    row->render = malloc(row->size + 1);
+    row->render = malloc(row->size +  tabs*(ASCEND_TAB_STOP - 1) + 1);
 
     int idx = 0;
     for(cnt = 0; cnt < row->size; cnt++){
         if(row->chars[cnt] == '\t'){
             row->render[idx++] = ' ';
-            while(idx % 8 != 0)
+            while(idx % ASCEND_TAB_STOP != 0)
                 row->render[idx++] = ' ';
         }
         else
