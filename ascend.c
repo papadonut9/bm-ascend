@@ -15,7 +15,7 @@
 #include <unistd.h>
 
 /*** defines ***/
-#define ASCEND_VERSION "0.9.74 -prerelease"
+#define ASCEND_VERSION "0.9.75 -prerelease"
 #define ASCEND_TAB_STOP 8
 #define CTRL_KEY(k) ((k)&0x1f)
 
@@ -475,7 +475,8 @@ void editorProcessKeypress()
         break;
 
     case END_KEY:
-        E.cx = E.screencols - 1;
+        if(E.cy < E.numrows)
+            E.cx = E.row[E.cy].size;
         break;
 
     case PAGE_UP:
