@@ -15,7 +15,7 @@
 #include <unistd.h>
 
 /*** defines ***/
-#define ASCEND_VERSION "0.7.72 -prerelease"
+#define ASCEND_VERSION "0.8.73 -prerelease"
 #define ASCEND_TAB_STOP 8
 #define CTRL_KEY(k) ((k)&0x1f)
 
@@ -327,7 +327,9 @@ void abFree(struct abuf *ab)
 
 void editorScroll(){
     // tab rendering
-    E.rx = E.cx;
+    E.rx = 0;
+    if(E.cy < E.numrows)
+        E.rx = editorRowCxToRx(&E.row[E.cy], E.cx);
 
     // Vertical Scrolling
     if(E.cy < E.rowoffset)
