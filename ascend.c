@@ -15,7 +15,7 @@
 #include <unistd.h>
 
 /*** defines ***/
-#define ASCEND_VERSION "0.5.67 -prerelease"
+#define ASCEND_VERSION "0.6.68 -prerelease"
 #define CTRL_KEY(k) ((k)&0x1f)
 
 enum editorKey
@@ -219,13 +219,26 @@ int getWindowSize(int *rows, int *cols)
 /***  row operations  ***/
 
 void editorUpdateRow(erow *row){
+    int tabs  = 0;
+    int cnt;
+
+    for(cnt = 0; cnt < row->size; cnt++)
+        if(row->chars[cnt] == '\t')
+            tabs++;
+    
     free(row->render);
     row->render = malloc(row->size + 1);
 
-    int cnt;
     int idx = 0;
-    for(cnt = 0; cnt < row->size; cnt++)
-        row->render[idx++] = row->chars[cnt];
+    for(cnt = 0; cnt < row->size; cnt++){
+        if(row->chars[cnt] == '\t'){
+            row->render[idx++] = ' ';
+            while(idx % 8 != 0)
+                row->render[idx++] = ' ';
+        }
+        else
+            row->render[idx++] = row->chars[cnt];
+    }
 
     row->render[idx] = '\0';
     row->rowsize = idx;
