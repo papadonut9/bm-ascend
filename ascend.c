@@ -15,7 +15,7 @@
 #include <unistd.h>
 
 /*** defines ***/
-#define ASCEND_VERSION "0.7.69 -prerelease"
+#define ASCEND_VERSION "0.7.70 -prerelease"
 #define ASCEND_TAB_STOP 8
 #define CTRL_KEY(k) ((k)&0x1f)
 
@@ -44,6 +44,7 @@ typedef struct erow{
 struct editorConfig
 {
     int cx, cy;
+    int rx;
     int rowoffset;
     int coloffset;
     int screenrows;
@@ -313,6 +314,9 @@ void abFree(struct abuf *ab)
 /*** output ***/
 
 void editorScroll(){
+    // tab rendering
+    E.rx = E.cx;
+
     // Vertical Scrolling
     if(E.cy < E.rowoffset)
         E.rowoffset = E.cy;
@@ -321,11 +325,11 @@ void editorScroll(){
         E.rowoffset = E.cy - E.screenrows + 1;
 
     // Horizontal Scrolling
-    if(E.cx < E.coloffset)
-        E.coloffset = E.cx;
+    if(E.rx < E.coloffset)
+        E.coloffset = E.rx;
 
-    if(E.cx >= E.coloffset + E.screencols)
-        E.coloffset = E.cx - E.screencols + 1;
+    if(E.rx >= E.coloffset + E.screencols)
+        E.coloffset = E.rx - E.screencols + 1;
 }
 
 void editorDrawRows(struct abuf *ab)
@@ -484,6 +488,7 @@ void editorInit()
 {
     E.cx = 0;
     E.cy = 0;
+    E.rx = 0;
     E.rowoffset = 0;
     E.coloffset = 0;
     E.numrows = 0;
