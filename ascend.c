@@ -15,7 +15,7 @@
 #include <unistd.h>
 
 /*** defines ***/
-#define ASCEND_VERSION "0.8.73 -prerelease"
+#define ASCEND_VERSION "0.8.74 -prerelease"
 #define ASCEND_TAB_STOP 8
 #define CTRL_KEY(k) ((k)&0x1f)
 
@@ -481,6 +481,14 @@ void editorProcessKeypress()
     case PAGE_UP:
     case PAGE_DOWN:
     {
+        if(c == PAGE_UP)
+            E.cy = E.rowoffset;
+        else if(c == PAGE_DOWN){
+            E.cy = E.rowoffset + E.screenrows - 1;
+            if(E.cy > E.numrows)
+                E.cy = E.numrows;
+        }
+
         int times = E.screenrows;
         while (times--)
             editorMoveCursor(c == PAGE_UP ? ARROW_UP : ARROW_DOWN);
