@@ -15,7 +15,7 @@
 #include <unistd.h>
 
 /*** defines ***/
-#define ASCEND_VERSION "0.9.77 -prerelease"
+#define ASCEND_VERSION "0.9.78 -prerelease"
 #define ASCEND_TAB_STOP 8
 #define CTRL_KEY(k) ((k)&0x1f)
 
@@ -51,6 +51,7 @@ struct editorConfig
     int screencols;
     int numrows;
     erow *row;
+    char *filename;
     struct termios orig_termios;
 };
 
@@ -276,6 +277,11 @@ void editorAppendRow(char *s, size_t len){
 /***  file I/O  ***/ 
 
 void editorOpen(char *filename){
+
+    // status bar filename
+    free(E.filename);
+    E.filename = strdup(filename);
+
     FILE *fp = fopen(filename, "r");
     if(!fp)
         errhandl("fopen");
@@ -529,6 +535,7 @@ void editorInit()
     E.coloffset = 0;
     E.numrows = 0;
     E.row = NULL;
+    E.filename = NULL;
 
     if (getWindowSize(&E.screenrows, &E.screencols) == -1)
         errhandl("getWindowSize");
