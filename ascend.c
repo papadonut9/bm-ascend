@@ -8,6 +8,7 @@
 #include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdarg.h>
 #include <string.h>
 #include <sys/ioctl.h>
 #include <sys/types.h>
@@ -16,7 +17,7 @@
 #include <unistd.h>
 
 /*** defines ***/
-#define ASCEND_VERSION "0.10.81 -prerelease"
+#define ASCEND_VERSION "0.10.82 -prerelease"
 #define ASCEND_TAB_STOP 8
 #define CTRL_KEY(k) ((k)&0x1f)
 
@@ -462,6 +463,14 @@ void editorRefreshScreen()
     abFree(&ab);
 }
 
+void editorSetStatusMsg(const char *formatstr, ...){
+    va_list ap;
+    va_start(ap, formatstr);
+    vsnprintf(E.statusmsg, sizeof(E.statusmsg), formatstr, ap);
+    va_end(ap);
+    E.statusmsg_time = time(NULL);
+}
+
 /*** input ***/
 
 void editorMoveCursor(int key)
@@ -575,6 +584,8 @@ int main(int argc, char *argv[])
 
     if(argc >= 2)
         editorOpen(argv[1]);
+
+    editorSetStatusMsg("HELP: ctrl-q -> quit ");
 
     while (1)
     {
