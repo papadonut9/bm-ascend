@@ -15,7 +15,7 @@
 #include <unistd.h>
 
 /*** defines ***/
-#define ASCEND_VERSION "0.9.75 -prerelease"
+#define ASCEND_VERSION "0.9.76 -prerelease"
 #define ASCEND_TAB_STOP 8
 #define CTRL_KEY(k) ((k)&0x1f)
 
@@ -394,7 +394,7 @@ void editorDrawRows(struct abuf *ab)
         }
 
         abAppend(ab, "\x1b[K", 3); // erase in-line [http://vt100.net/docs/vt100-ug/chapter3.html#EL]
-        if (lines < E.screenrows - 1)
+        // if (lines < E.screenrows - 1)
             abAppend(ab, "\r\n", 2);
     }
 }
@@ -519,6 +519,7 @@ void editorInit()
 
     if (getWindowSize(&E.screenrows, &E.screencols) == -1)
         errhandl("getWindowSize");
+    E.screenrows -= 1;
 }
 
 int main(int argc, char *argv[])
