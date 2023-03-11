@@ -1,16 +1,24 @@
 /*** includes ***/
 
+#define _DEFAULT_SOURCE
+#define _BSD_SOURCE
+#define _GNU_SOURCE
+
 #include <ctype.h>
 #include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdarg.h>
 #include <string.h>
 #include <sys/ioctl.h>
+#include <sys/types.h>
 #include <termios.h>
+#include <time.h>
 #include <unistd.h>
 
 /*** defines ***/
-#define ASCEND_VERSION "0.1.3"
+#define ASCEND_VERSION "1.11.84 -prerelease"
+#define ASCEND_TAB_STOP 8
 #define CTRL_KEY(k) ((k)&0x1f)
 
 enum editorKey
@@ -28,11 +36,27 @@ enum editorKey
 
 /*** data ***/
 
+typedef struct erow
+{
+    int size;
+    int rowsize;
+    char *chars;
+    char *render;
+} erow;
+
 struct editorConfig
 {
     int cx, cy;
+    int rx;
+    int rowoffset;
+    int coloffset;
     int screenrows;
     int screencols;
+    int numrows;
+    erow *row;
+    char *filename; // status bar only
+    char statusmsg[80];
+    time_t statusmsg_time;
     struct termios orig_termios;
 };
 
@@ -200,6 +224,94 @@ int getWindowSize(int *rows, int *cols)
     }
 }
 
+/***  row operations  ***/
+
+int editorRowCxToRx(erow *row, int cx)
+{
+    int rx = 0;
+    int cnt;
+
+    for (cnt = 0; cnt < cx; cnt++)
+    {
+        if (row->chars[cnt] == '\t')
+            rx += (ASCEND_TAB_STOP - 1) - (rx % ASCEND_TAB_STOP);
+        rx++;
+    }
+    return rx;
+}
+
+void editorUpdateRow(erow *row)
+{
+    int tabs = 0;
+    int cnt;
+
+    for (cnt = 0; cnt < row->size; cnt++)
+        if (row->chars[cnt] == '\t')
+            tabs++;
+
+    free(row->render);
+    row->render = malloc(row->size + tabs * (ASCEND_TAB_STOP - 1) + 1);
+
+    int idx = 0;
+    for (cnt = 0; cnt < row->size; cnt++)
+    {
+        if (row->chars[cnt] == '\t')
+        {
+            row->render[idx++] = ' ';
+            while (idx % ASCEND_TAB_STOP != 0)
+                row->render[idx++] = ' ';
+        }
+        else
+            row->render[idx++] = row->chars[cnt];
+    }
+
+    row->render[idx] = '\0';
+    row->rowsize = idx;
+}
+
+void editorAppendRow(char *s, size_t len)
+{
+    E.row = realloc(E.row, sizeof(erow) * (E.numrows + 1));
+    int at = E.numrows;
+    E.row[at].size = len;
+    E.row[at].chars = malloc(len + 1);
+    memcpy(E.row[at].chars, s, len);
+    E.row[at].chars[len] = '\0';
+
+    E.row[at].rowsize = 0;
+    E.row[at].render = NULL;
+    editorUpdateRow(&E.row[at]);
+
+    E.numrows++;
+}
+
+/***  file I/O  ***/
+
+void editorOpen(char *filename)
+{
+
+    // status bar filename
+    free(E.filename);
+    E.filename = strdup(filename);
+
+    FILE *fp = fopen(filename, "r");
+    if (!fp)
+        errhandl("fopen");
+
+    char *line = NULL;
+    ssize_t linelen;
+    size_t linecap = 0;
+    while ((linelen = getline(&line, &linecap, fp)) != -1)
+    {
+
+        while (linelen > 0 && (line[linelen - 1] == '\n' || line[linelen - 1] == '\r'))
+            linelen--;
+        editorAppendRow(line, linelen);
+    }
+    free(line);
+    fclose(fp);
+}
+
 /***  append buffer  ***/
 struct abuf
 {
@@ -231,55 +343,143 @@ void abFree(struct abuf *ab)
 
 /*** output ***/
 
+void editorScroll()
+{
+    // tab rendering
+    E.rx = 0;
+    if (E.cy < E.numrows)
+        E.rx = editorRowCxToRx(&E.row[E.cy], E.cx);
+
+    // Vertical Scrolling
+    if (E.cy < E.rowoffset)
+        E.rowoffset = E.cy;
+
+    if (E.cy >= E.rowoffset + E.screenrows)
+        E.rowoffset = E.cy - E.screenrows + 1;
+
+    // Horizontal Scrolling
+    if (E.rx < E.coloffset)
+        E.coloffset = E.rx;
+
+    if (E.rx >= E.coloffset + E.screencols)
+        E.coloffset = E.rx - E.screencols + 1;
+}
+
 void editorDrawRows(struct abuf *ab)
 {
     int lines;
     for (lines = 0; lines < E.screenrows; lines++)
     {
-        if (lines == E.screenrows / 3)
+        int filerow = lines + E.rowoffset;
+        if (filerow >= E.numrows)
         {
-            char welcome[80];
-            int welcomelen = snprintf(welcome, sizeof(welcome),
-                                      "Blackmagic Ascend -- version %s", ASCEND_VERSION);
-            if (welcomelen > E.screencols)
-                welcomelen = E.screencols;
-
-            int padding = (E.screencols - welcomelen) / 2;
-            if (padding)
+            if (E.numrows == 0 && lines == E.screenrows / 3)
             {
-                abAppend(ab, "~", 1);
-                padding--;
-            }
-            while (padding--)
-                abAppend(ab, " ", 1);
+                char welcome[80];
+                int welcomelen = snprintf(welcome, sizeof(welcome),
+                                          "Blackmagic Ascend -- version %s", ASCEND_VERSION);
+                if (welcomelen > E.screencols)
+                    welcomelen = E.screencols;
 
-            abAppend(ab, welcome, welcomelen);
+                int padding = (E.screencols - welcomelen) / 2;
+                if (padding)
+                {
+                    abAppend(ab, "~", 1);
+                    padding--;
+                }
+                while (padding--)
+                    abAppend(ab, " ", 1);
+
+                abAppend(ab, welcome, welcomelen);
+            }
+            else
+            {
+
+                // commenting out this line to fix the last line bug
+                // write(STDOUT_FILENO, "~\r\n", 3);
+                abAppend(ab, "~", 1);
+            }
         }
         else
         {
+            int len = E.row[filerow].rowsize - E.coloffset;
 
-            // commenting out this line to fix the last line bug
-            // write(STDOUT_FILENO, "~\r\n", 3);
-            abAppend(ab, "~", 1);
+            if (len < 0)
+                len = 0;
+
+            if (len > E.screencols)
+                len = E.screencols;
+            abAppend(ab, &E.row[filerow].render[E.coloffset], len);
         }
 
         abAppend(ab, "\x1b[K", 3); // erase in-line [http://vt100.net/docs/vt100-ug/chapter3.html#EL]
-        if (lines < E.screenrows - 1)
-            abAppend(ab, "\r\n", 2);
+                                   // if (lines < E.screenrows - 1)
+        abAppend(ab, "\r\n", 2);
     }
+}
+
+void editorDrawStatusBar(struct abuf *ab)
+{
+    abAppend(ab, "\x1b[7m", 4); // selective graphic rendition [http://vt100.net/docs/vt100-ug/chapter3.html#SGR]
+
+    char rstatus[80];
+    char status[80];
+    int len = snprintf(status,
+                       sizeof(status),
+                       "%.20s - %d lines",
+                       E.filename
+                           ? E.filename
+                           : "[NO FILE]",
+                       E.numrows);
+
+    int rlen = snprintf(rstatus, sizeof(rstatus), "%d%d", E.cy + 1, E.numrows);
+    if (len > E.screencols)
+        len = E.screencols;
+
+    abAppend(ab, status, len);
+
+    while (len < E.screencols)
+    {
+        if (E.screencols - len == rlen)
+        {
+            abAppend(ab, rstatus, rlen);
+            break;
+        }
+        else
+        {
+            abAppend(ab, " ", 1);
+            len++;
+        }
+    }
+
+    abAppend(ab, "\x1b[m", 3);
+    abAppend(ab, "\r\n", 2);
+}
+
+void editorRenderMsgBar(struct abuf *ab)
+{
+    abAppend(ab, "\x1b[K", 3);
+    int msglen = strlen(E.statusmsg);
+    if (msglen > E.screencols)
+        msglen = E.screencols;
+    if (msglen && time(NULL) - E.statusmsg_time < 5)
+        abAppend(ab, E.statusmsg, msglen);
 }
 
 void editorRefreshScreen()
 {
+    editorScroll();
     struct abuf ab = ABUF_INIT;
 
     abAppend(&ab, "\x1b[?25l", 6); // reset mode [http://vt100.net/docs/vt100-ug/chapter3.html#RM]
     abAppend(&ab, "\x1b[H", 3);
 
     editorDrawRows(&ab);
+    editorDrawStatusBar(&ab);
+    editorRenderMsgBar(&ab);
 
     char buf[32];
-    snprintf(buf, sizeof(buf), "\x1b[%d;%dH", E.cy + 1, E.cx + 1);
+    snprintf(buf, sizeof(buf), "\x1b[%d;%dH", (E.cy - E.rowoffset) + 1, (E.rx - E.coloffset) + 1);
     abAppend(&ab, buf, strlen(buf));
 
     abAppend(&ab, "\x1b[?25h", 6); // set mode [http://vt100.net/docs/vt100-ug/chapter3.html#SM]
@@ -288,26 +488,50 @@ void editorRefreshScreen()
     abFree(&ab);
 }
 
+void editorSetStatusMsg(const char *formatstr, ...)
+{
+    va_list ap;
+    va_start(ap, formatstr);
+    vsnprintf(E.statusmsg, sizeof(E.statusmsg), formatstr, ap);
+    va_end(ap);
+    E.statusmsg_time = time(NULL);
+}
+
 /*** input ***/
 
 void editorMoveCursor(int key)
 {
+    erow *row = (E.cy >= E.numrows)
+                    ? NULL
+                    : &E.row[E.cy];
+
     switch (key)
     {
     case ARROW_LEFT:
         if (E.cx != 0)
             E.cx--;
+        else if (E.cy > 0)
+        {
+            E.cy--;
+            E.cx = E.row[E.cy].size;
+        }
+
         break;
     case ARROW_RIGHT:
-        if (E.cx != E.screencols - 1)
+        if (row && E.cx < row->size)
             E.cx++;
+        else if (row && E.cx == row->size)
+        {
+            E.cy++;
+            E.cx = 0;
+        }
         break;
     case ARROW_UP:
         if (E.cy != 0)
             E.cy--;
         break;
     case ARROW_DOWN:
-        if (E.cy != E.screenrows - 1)
+        if (E.cy < E.numrows)
             E.cy++;
         break;
     }
@@ -330,12 +554,22 @@ void editorProcessKeypress()
         break;
 
     case END_KEY:
-        E.cx = E.screencols - 1;
+        if (E.cy < E.numrows)
+            E.cx = E.row[E.cy].size;
         break;
 
     case PAGE_UP:
     case PAGE_DOWN:
     {
+        if (c == PAGE_UP)
+            E.cy = E.rowoffset;
+        else if (c == PAGE_DOWN)
+        {
+            E.cy = E.rowoffset + E.screenrows - 1;
+            if (E.cy > E.numrows)
+                E.cy = E.numrows;
+        }
+
         int times = E.screenrows;
         while (times--)
             editorMoveCursor(c == PAGE_UP ? ARROW_UP : ARROW_DOWN);
@@ -357,15 +591,29 @@ void editorInit()
 {
     E.cx = 0;
     E.cy = 0;
+    E.rx = 0;
+    E.rowoffset = 0;
+    E.coloffset = 0;
+    E.numrows = 0;
+    E.row = NULL;
+    E.filename = NULL;
+    E.statusmsg[0] = '\0';
+    E.statusmsg_time = 0;
 
     if (getWindowSize(&E.screenrows, &E.screencols) == -1)
         errhandl("getWindowSize");
+    E.screenrows -= 2;
 }
 
-int main()
+int main(int argc, char *argv[])
 {
     enableRawMode();
     editorInit();
+
+    if (argc >= 2)
+        editorOpen(argv[1]);
+
+    editorSetStatusMsg("HELP: ctrl-q: quit ");
 
     while (1)
     {
