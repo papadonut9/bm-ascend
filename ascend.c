@@ -12,10 +12,11 @@
 #include <sys/ioctl.h>
 #include <sys/types.h>
 #include <termios.h>
+#include <time.h>
 #include <unistd.h>
 
 /*** defines ***/
-#define ASCEND_VERSION "0.10.80 -prerelease"
+#define ASCEND_VERSION "0.10.81 -prerelease"
 #define ASCEND_TAB_STOP 8
 #define CTRL_KEY(k) ((k)&0x1f)
 
@@ -52,6 +53,8 @@ struct editorConfig
     int numrows;
     erow *row;
     char *filename;     // status bar only
+    char statusmsg[80];
+    time_t statusmsg_time;
     struct termios orig_termios;
 };
 
@@ -557,6 +560,8 @@ void editorInit()
     E.numrows = 0;
     E.row = NULL;
     E.filename = NULL;
+    E.statusmsg[0] = '\0';
+    E.statusmsg_time = 0;
 
     if (getWindowSize(&E.screenrows, &E.screencols) == -1)
         errhandl("getWindowSize");
