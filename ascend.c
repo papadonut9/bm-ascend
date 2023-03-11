@@ -17,7 +17,7 @@
 #include <unistd.h>
 
 /*** defines ***/
-#define ASCEND_VERSION "0.10.83 -prerelease"
+#define ASCEND_VERSION "1.11.83 -prerelease"
 #define ASCEND_TAB_STOP 8
 #define CTRL_KEY(k) ((k)&0x1f)
 
@@ -443,6 +443,15 @@ void editorDrawStatusBar(struct abuf *ab){
     abAppend(ab, "\r\n", 2);
 }
 
+void editorRenderMsgBar(struct abuf *ab){
+    abAppend(ab, "\x1b[K", 3);
+    int msglen = strlen(E.statusmsg);
+    if(msglen > E.screencols)
+        msglen = E.screencols;
+    if(msglen && time(NULL) - E.statusmsg_time < 5)
+        abAppend(ab, E.statusmsg, msglen);
+}
+
 void editorRefreshScreen()
 {
     editorScroll();
@@ -453,6 +462,7 @@ void editorRefreshScreen()
 
     editorDrawRows(&ab);
     editorDrawStatusBar(&ab);
+    editorRenderMsgBar(&ab);
 
     char buf[32];
     snprintf(buf, sizeof(buf), "\x1b[%d;%dH", (E.cy - E.rowoffset) + 1, (E.rx - E.coloffset) + 1);
@@ -586,7 +596,7 @@ int main(int argc, char *argv[])
     if(argc >= 2)
         editorOpen(argv[1]);
 
-    editorSetStatusMsg("HELP: ctrl-q -> quit ");
+    editorSetStatusMsg("HELP: ctrl-q: quit ");
 
     while (1)
     {
