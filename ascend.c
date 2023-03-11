@@ -15,7 +15,7 @@
 #include <unistd.h>
 
 /*** defines ***/
-#define ASCEND_VERSION "0.9.78 -prerelease"
+#define ASCEND_VERSION "0.9.79 -prerelease"
 #define ASCEND_TAB_STOP 8
 #define CTRL_KEY(k) ((k)&0x1f)
 
@@ -51,7 +51,7 @@ struct editorConfig
     int screencols;
     int numrows;
     erow *row;
-    char *filename;
+    char *filename;     // status bar only
     struct termios orig_termios;
 };
 
@@ -407,7 +407,19 @@ void editorDrawRows(struct abuf *ab)
 
 void editorDrawStatusBar(struct abuf *ab){
     abAppend(ab, "\x1b[7m", 4);     // selective graphic rendition [http://vt100.net/docs/vt100-ug/chapter3.html#SGR]
-    int len = 0;
+    
+    char status[80];
+    int len = snprintf(status, 
+                        sizeof(status), 
+                        "%.20s - %d lines", 
+                        E.filename
+                            ? E.filename
+                            : "[NO FILE]",
+                        E.numrows);
+    if(len > E.screencols)
+        len = E.screencols;
+
+    abAppend(ab, status, len);
 
     while(len < E.screencols){
         abAppend(ab, " ", 1);
