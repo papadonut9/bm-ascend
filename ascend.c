@@ -17,7 +17,7 @@
 #include <unistd.h>
 
 /*** defines ***/
-#define ASCEND_VERSION "1.11.84 -prerelease"
+#define ASCEND_VERSION "1.11.85 -prerelease"
 #define ASCEND_TAB_STOP 8
 #define CTRL_KEY(k) ((k)&0x1f)
 
@@ -283,6 +283,17 @@ void editorAppendRow(char *s, size_t len)
     editorUpdateRow(&E.row[at]);
 
     E.numrows++;
+}
+
+void editorRowInsertChar(erow *row, int at, int c){
+    if(at < 0 || at > row->size)
+        at = row->size;
+
+    row->chars = realloc(row->chars, row->size + 2);
+    memmove(&row->chars[at + 1], &row->chars[at], row->size - at + 1);
+    row->size++;
+    row->chars[at] = c;
+    editorUpdateRow(row);
 }
 
 /***  file I/O  ***/
