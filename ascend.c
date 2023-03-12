@@ -17,7 +17,7 @@
 #include <unistd.h>
 
 /*** defines ***/
-#define ASCEND_VERSION "1.12.88 -prerelease"
+#define ASCEND_VERSION "1.12.89 -prerelease"
 #define ASCEND_TAB_STOP 8
 #define CTRL_KEY(k) ((k)&0x1f)
 
@@ -308,6 +308,25 @@ void editorInsertChar(int c){
 }
 
 /***  file I/O  ***/
+
+char *editorRowsToString(int *buffrlen){
+    int totlen = 0;
+    int cnt;
+    for(cnt = 0; cnt < E.numrows; cnt++)
+        totlen += E.row[cnt].size + 1;
+    *buffrlen = totlen;
+
+    char *buffer = malloc(totlen);
+    char *ptr = buffer;
+    
+    for(cnt = 0; cnt < E.numrows; cnt++){
+        memcpy(ptr, E.row[cnt].chars, E.row[cnt].size);
+        ptr += E.row[cnt].size;
+        *ptr = '\n';
+        ptr++;
+    }
+    return buffer;
+}
 
 void editorOpen(char *filename)
 {
