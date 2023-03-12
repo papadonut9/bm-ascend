@@ -18,7 +18,7 @@
 #include <unistd.h>
 
 /*** defines ***/
-#define ASCEND_VERSION "1.12.90 -prerelease"
+#define ASCEND_VERSION "1.12.91 -prerelease"
 #define ASCEND_TAB_STOP 8
 #define CTRL_KEY(k) ((k)&0x1f)
 
@@ -607,6 +607,10 @@ void editorProcessKeypress()
         write(STDOUT_FILENO, "\x1b[2J", 4);
         write(STDOUT_FILENO, "\x1b[H", 3);
         exit(0);
+        break;
+
+    case CTRL_KEY('s'):
+        editorSave();
         break;
 
     case HOME_KEY:
