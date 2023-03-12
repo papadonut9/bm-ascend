@@ -6,6 +6,7 @@
 
 #include <ctype.h>
 #include <errno.h>
+#include <fcntl.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdarg.h>
@@ -17,7 +18,7 @@
 #include <unistd.h>
 
 /*** defines ***/
-#define ASCEND_VERSION "1.12.89 -prerelease"
+#define ASCEND_VERSION "1.12.90 -prerelease"
 #define ASCEND_TAB_STOP 8
 #define CTRL_KEY(k) ((k)&0x1f)
 
@@ -318,7 +319,7 @@ char *editorRowsToString(int *buffrlen){
 
     char *buffer = malloc(totlen);
     char *ptr = buffer;
-    
+
     for(cnt = 0; cnt < E.numrows; cnt++){
         memcpy(ptr, E.row[cnt].chars, E.row[cnt].size);
         ptr += E.row[cnt].size;
@@ -351,6 +352,20 @@ void editorOpen(char *filename)
     }
     free(line);
     fclose(fp);
+}
+
+void editorSave(){
+    if(E.filename == NULL)
+        return;
+    
+    int len;
+    char *buffer = editorRowsToString(&len);
+
+    int fdefine = open(E.filename, O_RDWR | O_CREAT, 0644);
+    ftruncate(fdefine, len);
+    write(fdefine, buffer, len);
+    close(fdefine);
+    free(buffer);
 }
 
 /***  append buffer  ***/
