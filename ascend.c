@@ -18,7 +18,7 @@
 #include <unistd.h>
 
 /*** defines ***/
-#define ASCEND_VERSION "1.13.95 -prerelease"
+#define ASCEND_VERSION "1.13.96 -prerelease"
 #define ASCEND_TAB_STOP 8
 #define CTRL_KEY(k) ((k)&0x1f)
 
@@ -289,6 +289,7 @@ void editorAppendRow(char *s, size_t len)
     editorUpdateRow(&E.row[at]);
 
     E.numrows++;
+    E.dirty++;
 }
 
 void editorRowInsertChar(erow *row, int at, int c){
@@ -300,6 +301,7 @@ void editorRowInsertChar(erow *row, int at, int c){
     row->size++;
     row->chars[at] = c;
     editorUpdateRow(row);
+    E.dirty++;
 }
 
 /***  editor operations  ***/
