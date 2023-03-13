@@ -18,7 +18,7 @@
 #include <unistd.h>
 
 /*** defines ***/
-#define ASCEND_VERSION "1.13.93 -prerelease"
+#define ASCEND_VERSION "1.13.94 -prerelease"
 #define ASCEND_TAB_STOP 8
 #define CTRL_KEY(k) ((k)&0x1f)
 
@@ -56,6 +56,7 @@ struct editorConfig
     int screencols;
     int numrows;
     erow *row;
+    int dirty;
     char *filename; // status bar only
     char statusmsg[80];
     time_t statusmsg_time;
@@ -691,6 +692,7 @@ void editorInit()
     E.coloffset = 0;
     E.numrows = 0;
     E.row = NULL;
+    E.dirty = 0;
     E.filename = NULL;
     E.statusmsg[0] = '\0';
     E.statusmsg_time = 0;
