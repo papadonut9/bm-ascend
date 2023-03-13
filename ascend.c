@@ -18,7 +18,7 @@
 #include <unistd.h>
 
 /*** defines ***/
-#define ASCEND_VERSION "1.13.93 -prerelease"
+#define ASCEND_VERSION "1.14.97 -prerelease"
 #define ASCEND_TAB_STOP 8
 #define CTRL_KEY(k) ((k)&0x1f)
 
@@ -56,6 +56,7 @@ struct editorConfig
     int screencols;
     int numrows;
     erow *row;
+    int dirty;
     char *filename; // status bar only
     char statusmsg[80];
     time_t statusmsg_time;
@@ -288,6 +289,7 @@ void editorAppendRow(char *s, size_t len)
     editorUpdateRow(&E.row[at]);
 
     E.numrows++;
+    E.dirty++;
 }
 
 void editorRowInsertChar(erow *row, int at, int c){
@@ -299,6 +301,7 @@ void editorRowInsertChar(erow *row, int at, int c){
     row->size++;
     row->chars[at] = c;
     editorUpdateRow(row);
+    E.dirty++;
 }
 
 /***  editor operations  ***/
@@ -355,6 +358,7 @@ void editorOpen(char *filename)
     }
     free(line);
     fclose(fp);
+    E.dirty = 0;
 }
 
 void editorSave(){
@@ -372,6 +376,7 @@ void editorSave(){
             if(write(fdefine, buffer, len) == len){
                 close(fdefine);
                 free(buffer);
+                E.dirty = 0;
                 editorSetStatusMsg("%d bytes written to disk", len);
                 return;
             }
@@ -497,11 +502,14 @@ void editorDrawStatusBar(struct abuf *ab)
     char status[80];
     int len = snprintf(status,
                        sizeof(status),
-                       "%.20s - %d lines",
+                       "%.20s - %d lines %s",                
                        E.filename
                            ? E.filename
                            : "[NO FILE]",
-                       E.numrows);
+                       E.numrows,   
+                       E.dirty
+                        ? "(modified)"
+                        : "");
 
     int rlen = snprintf(rstatus, sizeof(rstatus), "%d%d", E.cy + 1, E.numrows);
     if (len > E.screencols)
@@ -691,6 +699,7 @@ void editorInit()
     E.coloffset = 0;
     E.numrows = 0;
     E.row = NULL;
+    E.dirty = 0;
     E.filename = NULL;
     E.statusmsg[0] = '\0';
     E.statusmsg_time = 0;
