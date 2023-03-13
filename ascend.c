@@ -18,7 +18,7 @@
 #include <unistd.h>
 
 /*** defines ***/
-#define ASCEND_VERSION "1.17.105 -prerelease"
+#define ASCEND_VERSION "1.17.106 -prerelease"
 #define ASCEND_TAB_STOP 8
 #define ASCEND_QUIT_TIMES 2
 
@@ -697,7 +697,7 @@ void editorProcessKeypress()
     switch (c)
     {
     case '\r':
-        // TODO:
+        editorinsertNewLine();
         break;
 
     case CTRL_KEY('q'):
