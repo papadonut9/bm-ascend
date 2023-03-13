@@ -18,7 +18,7 @@
 #include <unistd.h>
 
 /*** defines ***/
-#define ASCEND_VERSION "1.17.106 -prerelease"
+#define ASCEND_VERSION "1.17.108 -prerelease"
 #define ASCEND_TAB_STOP 8
 #define ASCEND_QUIT_TIMES 2
 
@@ -70,6 +70,7 @@ struct editorConfig E;
 /***  prototype functions  ***/
 void editorSetStatusMsg(const char *fmt, ...);
 void editorRefreshScreen();
+char *editorPrompt(char *prompt);
 
 /*** terminal ***/
 
@@ -411,7 +412,6 @@ char *editorRowsToString(int *buffrlen){
 
 void editorOpen(char *filename)
 {
-
     // status bar filename
     free(E.filename);
     E.filename = strdup(filename);
@@ -437,7 +437,7 @@ void editorOpen(char *filename)
 
 void editorSave(){
     if(E.filename == NULL)
-        return;
+        E.filename = editorPrompt("Save as: %s");
     
     int len;
     char *buffer = editorRowsToString(&len);
