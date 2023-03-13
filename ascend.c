@@ -18,7 +18,7 @@
 #include <unistd.h>
 
 /*** defines ***/
-#define ASCEND_VERSION "1.12.92 -prerelease"
+#define ASCEND_VERSION "1.13.93 -prerelease"
 #define ASCEND_TAB_STOP 8
 #define CTRL_KEY(k) ((k)&0x1f)
 
@@ -63,6 +63,9 @@ struct editorConfig
 };
 
 struct editorConfig E;
+
+/***  prototype functions  ***/
+void editorSetStatusMsg(const char *fmt, ...);
 
 /*** terminal ***/
 
@@ -369,6 +372,7 @@ void editorSave(){
             if(write(fdefine, buffer, len) == len){
                 close(fdefine);
                 free(buffer);
+                editorSetStatusMsg("%d bytes written to disk", len);
                 return;
             }
         }
@@ -376,6 +380,7 @@ void editorSave(){
     }
 
     free(buffer);
+    editorSetStatusMsg("Can't save!! i/o error: %s", strerror(errno));
 }
 
 /***  append buffer  ***/
@@ -703,7 +708,7 @@ int main(int argc, char *argv[])
     if (argc >= 2)
         editorOpen(argv[1]);
 
-    editorSetStatusMsg("HELP: ctrl-q: quit ");
+    editorSetStatusMsg("HELP: ctrl-q: quit  |   ctrl-s: save ");
 
     while (1)
     {
