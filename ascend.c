@@ -18,7 +18,7 @@
 #include <unistd.h>
 
 /*** defines ***/
-#define ASCEND_VERSION "1.13.96 -prerelease"
+#define ASCEND_VERSION "1.14.97 -prerelease"
 #define ASCEND_TAB_STOP 8
 #define CTRL_KEY(k) ((k)&0x1f)
 
@@ -358,6 +358,7 @@ void editorOpen(char *filename)
     }
     free(line);
     fclose(fp);
+    E.dirty = 0;
 }
 
 void editorSave(){
@@ -375,6 +376,7 @@ void editorSave(){
             if(write(fdefine, buffer, len) == len){
                 close(fdefine);
                 free(buffer);
+                E.dirty = 0;
                 editorSetStatusMsg("%d bytes written to disk", len);
                 return;
             }
