@@ -18,7 +18,7 @@
 #include <unistd.h>
 
 /*** defines ***/
-#define ASCEND_VERSION "1.13.94 -prerelease"
+#define ASCEND_VERSION "1.13.95 -prerelease"
 #define ASCEND_TAB_STOP 8
 #define CTRL_KEY(k) ((k)&0x1f)
 
@@ -498,11 +498,14 @@ void editorDrawStatusBar(struct abuf *ab)
     char status[80];
     int len = snprintf(status,
                        sizeof(status),
-                       "%.20s - %d lines",
+                       "%.20s - %d lines %s",                
                        E.filename
                            ? E.filename
                            : "[NO FILE]",
-                       E.numrows);
+                       E.numrows,   
+                       E.dirty
+                        ? "(modified)"
+                        : "");
 
     int rlen = snprintf(rstatus, sizeof(rstatus), "%d%d", E.cy + 1, E.numrows);
     if (len > E.screencols)
