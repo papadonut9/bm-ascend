@@ -69,6 +69,7 @@ struct editorConfig E;
 
 /***  prototype functions  ***/
 void editorSetStatusMsg(const char *fmt, ...);
+void editorRefreshScreen();
 
 /*** terminal ***/
 
@@ -650,6 +651,36 @@ void editorSetStatusMsg(const char *formatstr, ...)
 }
 
 /*** input ***/
+
+char *editorPrompt(char *prompt){
+    size_t buffrsize = 128;
+    char *buffer = malloc(buffrsize);
+
+    size_t buflen = 0;
+    buffer[0] = '\0';
+
+    while(1){
+        editorSetStatusMsg(prompt, buffer);
+        editorRefreshScreen();
+
+        int c = editorReadKey();
+
+        if(c == '\r'){
+            if(buflen != 0){
+                editorSetStatusMsg("");
+                return buffer;
+            }
+        }
+        else if(!iscntrl(c) && c < 128){
+            if(buflen == buffrsize - 1){
+                buffrsize *= 2;
+                buffer = realloc(buffer, buffrsize);
+            }
+            buffer[buflen++] = c;
+            buffer[buflen] = '\0';
+        }
+    }
+}
 
 void editorMoveCursor(int key)
 {
