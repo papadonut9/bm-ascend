@@ -18,7 +18,7 @@
 #include <unistd.h>
 
 /*** defines ***/
-#define ASCEND_VERSION "1.15.99 -prerelease"
+#define ASCEND_VERSION "1.16.100 -prerelease"
 #define ASCEND_TAB_STOP 8
 #define ASCEND_QUIT_TIMES 2
 
@@ -680,7 +680,9 @@ void editorProcessKeypress()
     case BACKSPACE:
     case CTRL_KEY('h'):
     case DEL_KEY:
-        /* TODO */
+        if(c == DEL_KEY)
+            editorMoveCursor(ARROW_RIGHT);
+        editorDeleteChar();
         break;
 
     case PAGE_UP:
