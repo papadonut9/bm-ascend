@@ -18,7 +18,7 @@
 #include <unistd.h>
 
 /*** defines ***/
-#define ASCEND_VERSION "1.17.109 -prerelease"
+#define ASCEND_VERSION "1.17.110 -prerelease"
 #define ASCEND_TAB_STOP 8
 #define ASCEND_QUIT_TIMES 2
 
@@ -436,8 +436,13 @@ void editorOpen(char *filename)
 }
 
 void editorSave(){
-    if(E.filename == NULL)
-        E.filename = editorPrompt("Save as: %s");
+    if(E.filename == NULL){
+        E.filename = editorPrompt("Save as: %s\t (esc to cancel)");
+        if(E.filename == NULL){
+            editorSetStatusMsg("Save cancelled successfully!!");
+            return;
+        }
+    }
     
     int len;
     char *buffer = editorRowsToString(&len);
