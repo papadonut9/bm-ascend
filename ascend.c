@@ -18,7 +18,7 @@
 #include <unistd.h>
 
 /*** defines ***/
-#define ASCEND_VERSION "1.17.103 -prerelease"
+#define ASCEND_VERSION "1.17.106 -prerelease"
 #define ASCEND_TAB_STOP 8
 #define ASCEND_QUIT_TIMES 2
 
@@ -292,18 +292,22 @@ void editorDeleteRow(int pos){
     E.dirty++;
 }
 
-void editorAppendRow(char *s, size_t len)
+void editorInsertRow(int pos, char *s, size_t len)
 {
-    E.row = realloc(E.row, sizeof(erow) * (E.numrows + 1));
-    int at = E.numrows;
-    E.row[at].size = len;
-    E.row[at].chars = malloc(len + 1);
-    memcpy(E.row[at].chars, s, len);
-    E.row[at].chars[len] = '\0';
+    if(pos < 0 || pos > E.numrows)
+        return;
 
-    E.row[at].rowsize = 0;
-    E.row[at].render = NULL;
-    editorUpdateRow(&E.row[at]);
+    E.row = realloc(E.row, sizeof(erow) * (E.numrows + 1));
+    memmove(&E.row[pos + 1], &E.row[pos], sizeof(erow) * (E.numrows - pos));
+
+    E.row[pos].size = len;
+    E.row[pos].chars = malloc(len + 1);
+    memcpy(E.row[pos].chars, s, len);
+    E.row[pos].chars[len] = '\0';
+
+    E.row[pos].rowsize = 0;
+    E.row[pos].render = NULL;
+    editorUpdateRow(&E.row[pos]);
 
     E.numrows++;
     E.dirty++;
@@ -343,10 +347,25 @@ void editorRowAppendString(erow *row, char *str, size_t len){
 
 void editorInsertChar(int c){
     if(E.cy == E.numrows)
-        editorAppendRow("", 0);
+        editorInsertRow(E.numrows, "", 0);
 
     editorRowInsertChar(&E.row[E.cy], E.cx, c);
     E.cx++;
+}
+
+void editorinsertNewLine(){
+    if(E.cx == 0)
+        editorInsertRow(E.cy, "", 0);
+    else{
+        erow *row = &E.row[E.cy];
+        editorInsertRow(E.cy + 1, &row->chars[E.cx], row->size - E.cx);
+        row = &E.row[E.cy];
+        row->size = E.cx;
+        row->chars[row->size] = '\0';
+        editorUpdateRow(row);
+    }
+    E.cy++;
+    E.cx = 0;
 }
 
 void editorDeleteChar(){
@@ -408,7 +427,7 @@ void editorOpen(char *filename)
 
         while (linelen > 0 && (line[linelen - 1] == '\n' || line[linelen - 1] == '\r'))
             linelen--;
-        editorAppendRow(line, linelen);
+        editorInsertRow(E.numrows, line, linelen);
     }
     free(line);
     fclose(fp);
@@ -678,7 +697,7 @@ void editorProcessKeypress()
     switch (c)
     {
     case '\r':
-        // TODO:
+        editorinsertNewLine();
         break;
 
     case CTRL_KEY('q'):
