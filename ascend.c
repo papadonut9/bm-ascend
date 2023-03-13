@@ -18,7 +18,7 @@
 #include <unistd.h>
 
 /*** defines ***/
-#define ASCEND_VERSION "1.15.97 -prerelease"
+#define ASCEND_VERSION "1.17.103 -prerelease"
 #define ASCEND_TAB_STOP 8
 #define ASCEND_QUIT_TIMES 2
 
@@ -277,6 +277,21 @@ void editorUpdateRow(erow *row)
     row->rowsize = idx;
 }
 
+void editorFreeRow(erow *row){
+    free(row->render);
+    free(row->chars);
+}
+
+void editorDeleteRow(int pos){
+    if(pos < 0 || pos >= E.numrows)
+        return;
+
+    editorFreeRow(&E.row[pos]);
+    memmove(&E.row[pos], &E.row[pos + 1], sizeof(erow) * (E.numrows - pos - 1));
+    E.numrows--;
+    E.dirty++;
+}
+
 void editorAppendRow(char *s, size_t len)
 {
     E.row = realloc(E.row, sizeof(erow) * (E.numrows + 1));
@@ -294,6 +309,15 @@ void editorAppendRow(char *s, size_t len)
     E.dirty++;
 }
 
+void editorRowDeleteChar(erow *row, int pos){
+    if(pos < 0 || pos > row->size)
+        return;
+    memmove(&row->chars[pos], &row->chars[pos + 1], row->size - pos);
+    row->size--;
+    editorUpdateRow(row);
+    E.dirty++;
+}
+
 void editorRowInsertChar(erow *row, int at, int c){
     if(at < 0 || at > row->size)
         at = row->size;
@@ -306,6 +330,15 @@ void editorRowInsertChar(erow *row, int at, int c){
     E.dirty++;
 }
 
+void editorRowAppendString(erow *row, char *str, size_t len){
+    row->chars = realloc(row->chars, row->size + len + 1);
+    memcpy(&row->chars[row->size], str, len);
+    row->size += len;
+    row->chars[row->size] = '\0';
+    editorUpdateRow(row);
+    E.dirty++;
+}
+
 /***  editor operations  ***/
 
 void editorInsertChar(int c){
@@ -314,6 +347,25 @@ void editorInsertChar(int c){
 
     editorRowInsertChar(&E.row[E.cy], E.cx, c);
     E.cx++;
+}
+
+void editorDeleteChar(){
+    if(E.cy == E.numrows)
+        return;
+    if(E.cx == 0 && E.cy == 0)
+        return;
+
+    erow *row = &E.row[E.cy];
+    if(E.cx > 0){
+        editorRowDeleteChar(row, E.cx - 1);
+        E.cx--;
+    }
+    else{
+        E.cx = E.row[E.cy - 1].size;
+        editorRowAppendString(&E.row[E.cy -1], row->chars, row->size);
+        editorDeleteRow(E.cy);
+        E.cy--;
+    }
 }
 
 /***  file I/O  ***/
@@ -660,7 +712,9 @@ void editorProcessKeypress()
     case BACKSPACE:
     case CTRL_KEY('h'):
     case DEL_KEY:
-        /* TODO */
+        if(c == DEL_KEY)
+            editorMoveCursor(ARROW_RIGHT);
+        editorDeleteChar();
         break;
 
     case PAGE_UP:
