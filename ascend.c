@@ -18,7 +18,7 @@
 #include <unistd.h>
 
 /*** defines ***/
-#define ASCEND_VERSION "1.12.91 -prerelease"
+#define ASCEND_VERSION "1.12.92 -prerelease"
 #define ASCEND_TAB_STOP 8
 #define CTRL_KEY(k) ((k)&0x1f)
 
@@ -362,9 +362,19 @@ void editorSave(){
     char *buffer = editorRowsToString(&len);
 
     int fdefine = open(E.filename, O_RDWR | O_CREAT, 0644);
-    ftruncate(fdefine, len);
-    write(fdefine, buffer, len);
-    close(fdefine);
+
+    if(fdefine != -1){
+        
+        if(ftruncate(fdefine, len) != -1){
+            if(write(fdefine, buffer, len) == len){
+                close(fdefine);
+                free(buffer);
+                return;
+            }
+        }
+        close(fdefine);
+    }
+
     free(buffer);
 }
 
