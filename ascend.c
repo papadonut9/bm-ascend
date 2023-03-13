@@ -18,7 +18,7 @@
 #include <unistd.h>
 
 /*** defines ***/
-#define ASCEND_VERSION "1.17.108 -prerelease"
+#define ASCEND_VERSION "1.17.109 -prerelease"
 #define ASCEND_TAB_STOP 8
 #define ASCEND_QUIT_TIMES 2
 
@@ -665,7 +665,12 @@ char *editorPrompt(char *prompt){
 
         int c = editorReadKey();
 
-        if(c == '\r'){
+        if(c == '\x1b'){
+            editorSetStatusMsg("");
+            free(buffer);
+            return NULL;
+        }
+        else if(c == '\r'){
             if(buflen != 0){
                 editorSetStatusMsg("");
                 return buffer;
