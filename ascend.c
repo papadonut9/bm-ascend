@@ -18,7 +18,7 @@
 #include <unistd.h>
 
 /*** defines ***/
-#define ASCEND_VERSION "1.15.97 -prerelease"
+#define ASCEND_VERSION "1.15.98 -prerelease"
 #define ASCEND_TAB_STOP 8
 #define ASCEND_QUIT_TIMES 2
 
@@ -291,6 +291,15 @@ void editorAppendRow(char *s, size_t len)
     editorUpdateRow(&E.row[at]);
 
     E.numrows++;
+    E.dirty++;
+}
+
+void editorRowDeleteChar(erow *row, int pos){
+    if(pos < 0 || pos > row->size)
+        return;
+    memmove(&row->chars[pos], &row->chars[pos + 1], row->size - pos);
+    row->size--;
+    editorUpdateRow(row);
     E.dirty++;
 }
 
