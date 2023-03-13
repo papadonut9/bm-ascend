@@ -6,6 +6,7 @@
 
 #include <ctype.h>
 #include <errno.h>
+#include <fcntl.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdarg.h>
@@ -17,7 +18,7 @@
 #include <unistd.h>
 
 /*** defines ***/
-#define ASCEND_VERSION "1.12.88 -prerelease"
+#define ASCEND_VERSION "1.13.93 -prerelease"
 #define ASCEND_TAB_STOP 8
 #define CTRL_KEY(k) ((k)&0x1f)
 
@@ -62,6 +63,9 @@ struct editorConfig
 };
 
 struct editorConfig E;
+
+/***  prototype functions  ***/
+void editorSetStatusMsg(const char *fmt, ...);
 
 /*** terminal ***/
 
@@ -309,6 +313,25 @@ void editorInsertChar(int c){
 
 /***  file I/O  ***/
 
+char *editorRowsToString(int *buffrlen){
+    int totlen = 0;
+    int cnt;
+    for(cnt = 0; cnt < E.numrows; cnt++)
+        totlen += E.row[cnt].size + 1;
+    *buffrlen = totlen;
+
+    char *buffer = malloc(totlen);
+    char *ptr = buffer;
+
+    for(cnt = 0; cnt < E.numrows; cnt++){
+        memcpy(ptr, E.row[cnt].chars, E.row[cnt].size);
+        ptr += E.row[cnt].size;
+        *ptr = '\n';
+        ptr++;
+    }
+    return buffer;
+}
+
 void editorOpen(char *filename)
 {
 
@@ -332,6 +355,32 @@ void editorOpen(char *filename)
     }
     free(line);
     fclose(fp);
+}
+
+void editorSave(){
+    if(E.filename == NULL)
+        return;
+    
+    int len;
+    char *buffer = editorRowsToString(&len);
+
+    int fdefine = open(E.filename, O_RDWR | O_CREAT, 0644);
+
+    if(fdefine != -1){
+        
+        if(ftruncate(fdefine, len) != -1){
+            if(write(fdefine, buffer, len) == len){
+                close(fdefine);
+                free(buffer);
+                editorSetStatusMsg("%d bytes written to disk", len);
+                return;
+            }
+        }
+        close(fdefine);
+    }
+
+    free(buffer);
+    editorSetStatusMsg("Can't save!! i/o error: %s", strerror(errno));
 }
 
 /***  append buffer  ***/
@@ -575,6 +624,10 @@ void editorProcessKeypress()
         exit(0);
         break;
 
+    case CTRL_KEY('s'):
+        editorSave();
+        break;
+
     case HOME_KEY:
         E.cx = 0;
         break;
@@ -655,7 +708,7 @@ int main(int argc, char *argv[])
     if (argc >= 2)
         editorOpen(argv[1]);
 
-    editorSetStatusMsg("HELP: ctrl-q: quit ");
+    editorSetStatusMsg("HELP: ctrl-q: quit  |   ctrl-s: save ");
 
     while (1)
     {
