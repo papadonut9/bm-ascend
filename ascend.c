@@ -18,7 +18,7 @@
 #include <unistd.h>
 
 /*** defines ***/
-#define ASCEND_VERSION "2.0.110 -prerelease" 
+#define ASCEND_VERSION "2.0.111 -prerelease" 
 #define ASCEND_TAB_STOP 8
 #define ASCEND_QUIT_TIMES 2
 
@@ -484,6 +484,28 @@ void editorSave()
 
     free(buffer);
     editorSetStatusMsg("Can't save!! i/o error: %s", strerror(errno));
+}
+
+/***  search  ***/
+
+void editorFind(){
+    char *query = editorPrompt("Search: %s\t(esc to cancel)");
+    if(query == NULL)
+        return;
+
+    int cnt;
+
+    for(cnt = 0; cnt < E.numrows; cnt++){
+        erow *row = &E.row[cnt];
+        char *match = strstr(row->render, query);
+        if(match){
+            E.cy = cnt;
+            E.cx = match - row->render;
+            E.rowoffset = E.numrows;
+            break;
+        }
+    }
+    free(query);
 }
 
 /***  append buffer  ***/
