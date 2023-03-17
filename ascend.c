@@ -18,7 +18,7 @@
 #include <unistd.h>
 
 /*** defines ***/
-#define ASCEND_VERSION "2.0.112 -prerelease" 
+#define ASCEND_VERSION "2.1.114 -prerelease" 
 #define ASCEND_TAB_STOP 8
 #define ASCEND_QUIT_TIMES 2
 
@@ -838,6 +838,10 @@ void editorProcessKeypress()
             E.cx = E.row[E.cy].size;
         break;
 
+    case CTRL_KEY('f'):
+        editorFind();
+        break;
+
     case BACKSPACE:
     case CTRL_KEY('h'):
     case DEL_KEY:
@@ -911,7 +915,7 @@ int main(int argc, char *argv[])
     if (argc >= 2)
         editorOpen(argv[1]);
 
-    editorSetStatusMsg("HELP: ctrl-q: quit  |   ctrl-s: save ");
+    editorSetStatusMsg("HELP: ctrl-q: quit  |   ctrl-s: save    |   ctrl-f: search");
 
     while (1)
     {
