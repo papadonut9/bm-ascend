@@ -18,7 +18,7 @@
 #include <unistd.h>
 
 /*** defines ***/
-#define ASCEND_VERSION "2.1.115 -prerelease" 
+#define ASCEND_VERSION "2.2.116 -prerelease" 
 #define ASCEND_TAB_STOP 8
 #define ASCEND_QUIT_TIMES 2
 
@@ -504,12 +504,10 @@ void editorSave()
 }
 
 /***  search  ***/
-
-void editorFind(){
-    char *query = editorPrompt("Search: %s\t(esc to cancel)", NULL);
-    if(query == NULL)
+void editorFindCallback(char *query, int key){
+    if(key == '\r' || key == '\x1b')
         return;
-
+    
     int cnt;
 
     for(cnt = 0; cnt < E.numrows; cnt++){
@@ -522,7 +520,12 @@ void editorFind(){
             break;
         }
     }
-    free(query);
+}
+
+void editorFind(){
+    char *query = editorPrompt("Search: %s\t(esc to cancel)", editorFindCallback);
+    if(query)
+        free(query);
 }
 
 /***  append buffer  ***/
