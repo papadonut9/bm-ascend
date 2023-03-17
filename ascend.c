@@ -516,7 +516,7 @@ void editorFind(){
         char *match = strstr(row->render, query);
         if(match){
             E.cy = cnt;
-            E.cx = match - row->render;
+            E.cx = editorRowRxToCx(row, match - row->render);
             E.rowoffset = E.numrows;
             break;
         }
