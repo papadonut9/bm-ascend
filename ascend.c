@@ -18,7 +18,7 @@
 #include <unistd.h>
 
 /*** defines ***/
-#define ASCEND_VERSION "2.2.117 -prerelease" 
+#define ASCEND_VERSION "2.4.120 -prerelease" 
 #define ASCEND_TAB_STOP 8
 #define ASCEND_QUIT_TIMES 2
 
@@ -505,16 +505,44 @@ void editorSave()
 
 /***  search  ***/
 void editorFindCallback(char *query, int key){
-    if(key == '\r' || key == '\x1b')
+    static int last_match = -1;
+    static int direction = 1;
+
+    if(key == '\r' || key == '\x1b'){
+        last_match = -1;
+        direction = -1;
         return;
+    }
+    else if(key == ARROW_RIGHT || key == ARROW_DOWN)
+        direction = 1;
     
+    else if(key == ARROW_LEFT || key == ARROW_UP)
+        direction = -1;
+    
+    else{
+        last_match = -1;
+        direction = -1;
+    }
+
+    if(last_match == -1)
+        direction = 1;
+
+    int current = last_match;
     int cnt;
 
     for(cnt = 0; cnt < E.numrows; cnt++){
-        erow *row = &E.row[cnt];
+        current += direction;
+        
+        if(current == -1)
+            current = E.numrows - 1;
+        else if(current == E.numrows)
+            current = 0;
+
+        erow *row = &E.row[current];
         char *match = strstr(row->render, query);
         if(match){
-            E.cy = cnt;
+            last_match = current;
+            E.cy = current;
             E.cx = editorRowRxToCx(row, match - row->render);
             E.rowoffset = E.numrows;
             break;
@@ -528,7 +556,8 @@ void editorFind(){
     int saved_coloffset = E.coloffset;
     int saved_rowoffset = E.rowoffset;
 
-    char *query = editorPrompt("Search: %s\t(esc to cancel)", editorFindCallback);
+    char *query = editorPrompt("Search: %s\t(Use esc/arrows/return)", 
+                                editorFindCallback);
     if(query)
         free(query);
     else{
