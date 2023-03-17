@@ -18,7 +18,7 @@
 #include <unistd.h>
 
 /*** defines ***/
-#define ASCEND_VERSION "2.0.111 -prerelease" 
+#define ASCEND_VERSION "2.0.112 -prerelease" 
 #define ASCEND_TAB_STOP 8
 #define ASCEND_QUIT_TIMES 2
 
@@ -248,6 +248,22 @@ int editorRowCxToRx(erow *row, int cx)
         rx++;
     }
     return rx;
+}
+
+int editorRowRxToCx(erow *row, int rx){
+    int curr_rx = 0;
+    int cx;
+
+    for(cx = 0; cx < row->size; cx++){
+        if(row->chars[cx] == '\t')
+            curr_rx += (ASCEND_TAB_STOP - 1) - (curr_rx % ASCEND_TAB_STOP);
+        
+        curr_rx++;
+
+        if(curr_rx > rx)
+            return cx;
+    }
+    return cx;
 }
 
 void editorUpdateRow(erow *row)
