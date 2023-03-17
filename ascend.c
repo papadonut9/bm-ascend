@@ -18,7 +18,7 @@
 #include <unistd.h>
 
 /*** defines ***/
-#define ASCEND_VERSION "2.1.114 -prerelease" 
+#define ASCEND_VERSION "2.2.116 -prerelease" 
 #define ASCEND_TAB_STOP 8
 #define ASCEND_QUIT_TIMES 2
 
@@ -70,7 +70,8 @@ struct editorConfig E;
 /***  prototype functions  ***/
 void editorSetStatusMsg(const char *fmt, ...);
 void editorRefreshScreen();
-char *editorPrompt(char *prompt);
+char *editorPrompt(char *prompt, void (*callback)(char *, int));
+
 
 /*** terminal ***/
 
@@ -468,7 +469,7 @@ void editorSave()
 {
     if (E.filename == NULL)
     {
-        E.filename = editorPrompt("Save as: %s\t (esc to cancel)");
+        E.filename = editorPrompt("Save as: %s\t (esc to cancel)", NULL);
         if (E.filename == NULL)
         {
             editorSetStatusMsg("Save cancelled successfully!!");
@@ -503,12 +504,10 @@ void editorSave()
 }
 
 /***  search  ***/
-
-void editorFind(){
-    char *query = editorPrompt("Search: %s\t(esc to cancel)");
-    if(query == NULL)
+void editorFindCallback(char *query, int key){
+    if(key == '\r' || key == '\x1b')
         return;
-
+    
     int cnt;
 
     for(cnt = 0; cnt < E.numrows; cnt++){
@@ -521,7 +520,12 @@ void editorFind(){
             break;
         }
     }
-    free(query);
+}
+
+void editorFind(){
+    char *query = editorPrompt("Search: %s\t(esc to cancel)", editorFindCallback);
+    if(query)
+        free(query);
 }
 
 /***  append buffer  ***/
@@ -714,7 +718,7 @@ void editorSetStatusMsg(const char *formatstr, ...)
 
 /*** input ***/
 
-char *editorPrompt(char *prompt)
+char *editorPrompt(char *prompt, void (*callback)(char *, int))
 {
     size_t buffrsize = 128;
     char *buffer = malloc(buffrsize);
@@ -737,6 +741,10 @@ char *editorPrompt(char *prompt)
         else if (c == '\x1b')
         {
             editorSetStatusMsg("");
+            
+            if(callback)
+                callback(buffer, c);
+
             free(buffer);
             return NULL;
         }
@@ -745,6 +753,9 @@ char *editorPrompt(char *prompt)
             if (buflen != 0)
             {
                 editorSetStatusMsg("");
+                if(callback)
+                    callback(buffer, c);
+
                 return buffer;
             }
         }
@@ -758,6 +769,8 @@ char *editorPrompt(char *prompt)
             buffer[buflen++] = c;
             buffer[buflen] = '\0';
         }
+        if(callback)
+            callback(buffer, c);
     }
 }
 
