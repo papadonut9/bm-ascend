@@ -18,7 +18,7 @@
 #include <unistd.h>
 
 /*** defines ***/
-#define ASCEND_VERSION "2.4.120 -prerelease" 
+#define ASCEND_VERSION "3.0.120 -prerelease"
 #define ASCEND_TAB_STOP 8
 #define ASCEND_QUIT_TIMES 2
 
@@ -71,7 +71,6 @@ struct editorConfig E;
 void editorSetStatusMsg(const char *fmt, ...);
 void editorRefreshScreen();
 char *editorPrompt(char *prompt, void (*callback)(char *, int));
-
 
 /*** terminal ***/
 
@@ -251,17 +250,19 @@ int editorRowCxToRx(erow *row, int cx)
     return rx;
 }
 
-int editorRowRxToCx(erow *row, int rx){
+int editorRowRxToCx(erow *row, int rx)
+{
     int curr_rx = 0;
     int cx;
 
-    for(cx = 0; cx < row->size; cx++){
-        if(row->chars[cx] == '\t')
+    for (cx = 0; cx < row->size; cx++)
+    {
+        if (row->chars[cx] == '\t')
             curr_rx += (ASCEND_TAB_STOP - 1) - (curr_rx % ASCEND_TAB_STOP);
-        
+
         curr_rx++;
 
-        if(curr_rx > rx)
+        if (curr_rx > rx)
             return cx;
     }
     return cx;
@@ -504,43 +505,48 @@ void editorSave()
 }
 
 /***  search  ***/
-void editorFindCallback(char *query, int key){
+void editorFindCallback(char *query, int key)
+{
     static int last_match = -1;
     static int direction = 1;
 
-    if(key == '\r' || key == '\x1b'){
+    if (key == '\r' || key == '\x1b')
+    {
         last_match = -1;
         direction = -1;
         return;
     }
-    else if(key == ARROW_RIGHT || key == ARROW_DOWN)
+    else if (key == ARROW_RIGHT || key == ARROW_DOWN)
         direction = 1;
-    
-    else if(key == ARROW_LEFT || key == ARROW_UP)
+
+    else if (key == ARROW_LEFT || key == ARROW_UP)
         direction = -1;
-    
-    else{
+
+    else
+    {
         last_match = -1;
         direction = -1;
     }
 
-    if(last_match == -1)
+    if (last_match == -1)
         direction = 1;
 
     int current = last_match;
     int cnt;
 
-    for(cnt = 0; cnt < E.numrows; cnt++){
+    for (cnt = 0; cnt < E.numrows; cnt++)
+    {
         current += direction;
-        
-        if(current == -1)
+
+        if (current == -1)
             current = E.numrows - 1;
-        else if(current == E.numrows)
+        else if (current == E.numrows)
             current = 0;
 
         erow *row = &E.row[current];
         char *match = strstr(row->render, query);
-        if(match){
+        if (match)
+        {
             last_match = current;
             E.cy = current;
             E.cx = editorRowRxToCx(row, match - row->render);
@@ -550,17 +556,19 @@ void editorFindCallback(char *query, int key){
     }
 }
 
-void editorFind(){
+void editorFind()
+{
     int saved_cx = E.cx;
     int saved_cy = E.cy;
     int saved_coloffset = E.coloffset;
     int saved_rowoffset = E.rowoffset;
 
-    char *query = editorPrompt("Search: %s\t(Use esc/arrows/return)", 
-                                editorFindCallback);
-    if(query)
+    char *query = editorPrompt("Search: %s\t(Use esc/arrows/return)",
+                               editorFindCallback);
+    if (query)
         free(query);
-    else{
+    else
+    {
         E.cx = saved_cx;
         E.cy = saved_cy;
         E.coloffset = saved_coloffset;
@@ -781,8 +789,8 @@ char *editorPrompt(char *prompt, void (*callback)(char *, int))
         else if (c == '\x1b')
         {
             editorSetStatusMsg("");
-            
-            if(callback)
+
+            if (callback)
                 callback(buffer, c);
 
             free(buffer);
@@ -793,7 +801,7 @@ char *editorPrompt(char *prompt, void (*callback)(char *, int))
             if (buflen != 0)
             {
                 editorSetStatusMsg("");
-                if(callback)
+                if (callback)
                     callback(buffer, c);
 
                 return buffer;
@@ -809,7 +817,7 @@ char *editorPrompt(char *prompt, void (*callback)(char *, int))
             buffer[buflen++] = c;
             buffer[buflen] = '\0';
         }
-        if(callback)
+        if (callback)
             callback(buffer, c);
     }
 }
