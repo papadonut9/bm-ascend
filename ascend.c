@@ -18,7 +18,7 @@
 #include <unistd.h>
 
 /*** defines ***/
-#define ASCEND_VERSION "2.3.119 -prerelease" 
+#define ASCEND_VERSION "2.4.120 -prerelease" 
 #define ASCEND_TAB_STOP 8
 #define ASCEND_QUIT_TIMES 2
 
@@ -556,7 +556,8 @@ void editorFind(){
     int saved_coloffset = E.coloffset;
     int saved_rowoffset = E.rowoffset;
 
-    char *query = editorPrompt("Search: %s\t(esc to cancel)", editorFindCallback);
+    char *query = editorPrompt("Search: %s\t(Use esc/arrows/return)", 
+                                editorFindCallback);
     if(query)
         free(query);
     else{
