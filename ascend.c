@@ -18,7 +18,7 @@
 #include <unistd.h>
 
 /*** defines ***/
-#define ASCEND_VERSION "3.1.122 -stable"
+#define ASCEND_VERSION "3.1.123 -stable"
 #define ASCEND_TAB_STOP 8
 #define ASCEND_QUIT_TIMES 2
 
@@ -36,6 +36,11 @@ enum editorKey
     END_KEY,
     PAGE_UP,
     PAGE_DOWN
+};
+
+enum editorHighlight{
+    HL_NORMAL = 0,
+    HL_NUMBER
 };
 
 /*** data ***/
