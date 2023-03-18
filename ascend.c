@@ -18,7 +18,7 @@
 #include <unistd.h>
 
 /*** defines ***/
-#define ASCEND_VERSION "3.1.126 -stable"
+#define ASCEND_VERSION "3.1.127 -stable"
 #define ASCEND_TAB_STOP 8
 #define ASCEND_QUIT_TIMES 2
 
@@ -675,7 +675,7 @@ void editorDrawRows(struct abuf *ab)
             {
                 char welcome[80];
                 int welcomelen = snprintf(welcome, sizeof(welcome),
-                                          "Blackmagic Ascend -- version %s", ASCEND_VERSION);
+                                          "Blackmagic Ascend -v%s", ASCEND_VERSION);
                 if (welcomelen > E.screencols)
                     welcomelen = E.screencols;
 
@@ -709,18 +709,24 @@ void editorDrawRows(struct abuf *ab)
                 len = E.screencols;
 
             char *c  = &E.row[filerow].render[E.coloffset];
-            
+            unsigned char *highlight = &E.row[filerow].highlight[E.coloffset];
+
             int cnt;
             
             for(cnt = 0; cnt < len; cnt++){
-                if(isdigit(c[cnt])){
-                    abAppend(ab, "\x1b[31m", 5);
-                    abAppend(ab, &c[cnt], 1);
+                if(highlight[cnt] == HL_NORMAL){
                     abAppend(ab, "\x1b[39m", 5);
-                }
-                else
                     abAppend(ab, &c[cnt], 1);
+                }
+                else{
+                    int color = editorSyntaxToColor(highlight[cnt]);
+                    char buffer[16];
+                    int clength = snprintf(buffer, sizeof(buffer), "\x1b[%dm", color);
+                    abAppend(ab, buffer, clength);
+                    abAppend(ab, &c[cnt], 1);
+                }
             }
+            abAppend(ab, "\x1b[39m", 5);
         }
 
         abAppend(ab, "\x1b[K", 3); // erase in-line [http://vt100.net/docs/vt100-ug/chapter3.html#EL]
