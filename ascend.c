@@ -18,7 +18,7 @@
 #include <unistd.h>
 
 /*** defines ***/
-#define ASCEND_VERSION "3.1.121 -stable"
+#define ASCEND_VERSION "3.1.122 -stable"
 #define ASCEND_TAB_STOP 8
 #define ASCEND_QUIT_TIMES 2
 
@@ -46,6 +46,7 @@ typedef struct erow
     int rowsize;
     char *chars;
     char *render;
+    unsigned char *highlight;
 } erow;
 
 struct editorConfig
@@ -301,6 +302,7 @@ void editorFreeRow(erow *row)
 {
     free(row->render);
     free(row->chars);
+    free(row->highlight);
 }
 
 void editorDeleteRow(int pos)
@@ -329,6 +331,7 @@ void editorInsertRow(int pos, char *s, size_t len)
 
     E.row[pos].rowsize = 0;
     E.row[pos].render = NULL;
+    E.row[pos].highlight = NULL;
     editorUpdateRow(&E.row[pos]);
 
     E.numrows++;
