@@ -18,7 +18,7 @@
 #include <unistd.h>
 
 /*** defines ***/
-#define ASCEND_VERSION "3.1.124 -stable"
+#define ASCEND_VERSION "3.1.125 -stable"
 #define ASCEND_TAB_STOP 8
 #define ASCEND_QUIT_TIMES 2
 
@@ -299,21 +299,23 @@ void editorUpdateRow(erow *row)
     free(row->render);
     row->render = malloc(row->size + tabs * (ASCEND_TAB_STOP - 1) + 1);
 
-    int idx = 0;
+    int index = 0;
     for (cnt = 0; cnt < row->size; cnt++)
     {
         if (row->chars[cnt] == '\t')
         {
-            row->render[idx++] = ' ';
-            while (idx % ASCEND_TAB_STOP != 0)
-                row->render[idx++] = ' ';
+            row->render[index++] = ' ';
+            while (index % ASCEND_TAB_STOP != 0)
+                row->render[index++] = ' ';
         }
         else
-            row->render[idx++] = row->chars[cnt];
+            row->render[index++] = row->chars[cnt];
     }
 
-    row->render[idx] = '\0';
-    row->rowsize = idx;
+    row->render[index] = '\0';
+    row->rowsize = index;
+
+    editorUpdateSyntax(row);
 }
 
 void editorFreeRow(erow *row)
