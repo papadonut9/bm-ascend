@@ -18,7 +18,7 @@
 #include <unistd.h>
 
 /*** defines ***/
-#define ASCEND_VERSION "3.1.123 -stable"
+#define ASCEND_VERSION "3.1.124 -stable"
 #define ASCEND_TAB_STOP 8
 #define ASCEND_QUIT_TIMES 2
 
@@ -237,6 +237,19 @@ int getWindowSize(int *rows, int *cols)
         *cols = ws.ws_col;
         *rows = ws.ws_row;
         return 0;
+    }
+}
+
+/***  syntax highlighting  ***/
+
+void editorUpdateSyntax(erow *row){
+    row->highlight = realloc(row->highlight, row->rowsize);
+    memset(row->highlight, HL_NORMAL, row->rowsize);
+
+    int cnt;
+    for(cnt = 0; cnt < row->rowsize; cnt++){
+        if(isdigit(row->render[cnt]))
+            row->highlight[cnt] = HL_NUMBER;
     }
 }
 
