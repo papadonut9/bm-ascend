@@ -18,7 +18,7 @@
 #include <unistd.h>
 
 /*** defines ***/
-#define ASCEND_VERSION "3.0.120 -prerelease"
+#define ASCEND_VERSION "3.0.121 -stable"
 #define ASCEND_TAB_STOP 8
 #define ASCEND_QUIT_TIMES 2
 
@@ -673,11 +673,23 @@ void editorDrawRows(struct abuf *ab)
 
             if (len > E.screencols)
                 len = E.screencols;
-            abAppend(ab, &E.row[filerow].render[E.coloffset], len);
+
+            char *c  = &E.row[filerow].render[E.coloffset];
+            
+            int cnt;
+            
+            for(cnt = 0; cnt < len; cnt++){
+                if(isdigit(c[cnt])){
+                    abAppend(ab, "\x1b[31m", 5);
+                    abAppend(ab, &c[cnt], 1);
+                    abAppend(ab, "\x1b[39m", 5);
+                }
+                else
+                    abAppend(ab, &c[cnt], 1);
+            }
         }
 
         abAppend(ab, "\x1b[K", 3); // erase in-line [http://vt100.net/docs/vt100-ug/chapter3.html#EL]
-                                   // if (lines < E.screenrows - 1)
         abAppend(ab, "\r\n", 2);
     }
 }
@@ -977,7 +989,7 @@ int main(int argc, char *argv[])
         editorOpen(argv[1]);
 
     editorSetStatusMsg("HELP: ctrl-q: quit  |   ctrl-s: save    |   ctrl-f: search");
-
+                                                                                                                                                                                            
     while (1)
     {
         editorRefreshScreen();
