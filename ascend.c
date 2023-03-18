@@ -18,7 +18,7 @@
 #include <unistd.h>
 
 /*** defines ***/
-#define ASCEND_VERSION "3.1.121 -stable"
+#define ASCEND_VERSION "3.2.128 -stable"
 #define ASCEND_TAB_STOP 8
 #define ASCEND_QUIT_TIMES 2
 
@@ -38,6 +38,11 @@ enum editorKey
     PAGE_DOWN
 };
 
+enum editorHighlight{
+    HL_NORMAL = 0,
+    HL_NUMBER
+};
+
 /*** data ***/
 
 typedef struct erow
@@ -46,6 +51,7 @@ typedef struct erow
     int rowsize;
     char *chars;
     char *render;
+    unsigned char *highlight;
 } erow;
 
 struct editorConfig
@@ -234,6 +240,30 @@ int getWindowSize(int *rows, int *cols)
     }
 }
 
+/***  syntax highlighting  ***/
+
+void editorUpdateSyntax(erow *row){
+    row->highlight = realloc(row->highlight, row->rowsize);
+    memset(row->highlight, HL_NORMAL, row->rowsize);
+
+    int cnt;
+    for(cnt = 0; cnt < row->rowsize; cnt++){
+        if(isdigit(row->render[cnt]))
+            row->highlight[cnt] = HL_NUMBER;
+    }
+}
+
+int editorSyntaxToColor(int highlight){
+    switch (highlight)
+    {
+    case HL_NUMBER:
+        return 31;
+    
+    default:
+        return 37;
+    }
+}
+
 /***  row operations  ***/
 
 int editorRowCxToRx(erow *row, int cx)
@@ -280,27 +310,30 @@ void editorUpdateRow(erow *row)
     free(row->render);
     row->render = malloc(row->size + tabs * (ASCEND_TAB_STOP - 1) + 1);
 
-    int idx = 0;
+    int index = 0;
     for (cnt = 0; cnt < row->size; cnt++)
     {
         if (row->chars[cnt] == '\t')
         {
-            row->render[idx++] = ' ';
-            while (idx % ASCEND_TAB_STOP != 0)
-                row->render[idx++] = ' ';
+            row->render[index++] = ' ';
+            while (index % ASCEND_TAB_STOP != 0)
+                row->render[index++] = ' ';
         }
         else
-            row->render[idx++] = row->chars[cnt];
+            row->render[index++] = row->chars[cnt];
     }
 
-    row->render[idx] = '\0';
-    row->rowsize = idx;
+    row->render[index] = '\0';
+    row->rowsize = index;
+
+    editorUpdateSyntax(row);
 }
 
 void editorFreeRow(erow *row)
 {
     free(row->render);
     free(row->chars);
+    free(row->highlight);
 }
 
 void editorDeleteRow(int pos)
@@ -329,6 +362,7 @@ void editorInsertRow(int pos, char *s, size_t len)
 
     E.row[pos].rowsize = 0;
     E.row[pos].render = NULL;
+    E.row[pos].highlight = NULL;
     editorUpdateRow(&E.row[pos]);
 
     E.numrows++;
@@ -641,7 +675,7 @@ void editorDrawRows(struct abuf *ab)
             {
                 char welcome[80];
                 int welcomelen = snprintf(welcome, sizeof(welcome),
-                                          "Blackmagic Ascend -- version %s", ASCEND_VERSION);
+                                          "Blackmagic Ascend -v%s", ASCEND_VERSION);
                 if (welcomelen > E.screencols)
                     welcomelen = E.screencols;
 
@@ -675,18 +709,30 @@ void editorDrawRows(struct abuf *ab)
                 len = E.screencols;
 
             char *c  = &E.row[filerow].render[E.coloffset];
-            
+            unsigned char *highlight = &E.row[filerow].highlight[E.coloffset];
+            int curr_color = -1;
             int cnt;
             
             for(cnt = 0; cnt < len; cnt++){
-                if(isdigit(c[cnt])){
-                    abAppend(ab, "\x1b[31m", 5);
+                if(highlight[cnt] == HL_NORMAL){
+                    if(curr_color != -1){
+                        abAppend(ab, "\x1b[39m", 5);
+                        curr_color = -1;
+                    }
                     abAppend(ab, &c[cnt], 1);
-                    abAppend(ab, "\x1b[39m", 5);
                 }
-                else
+                else{
+                    int color = editorSyntaxToColor(highlight[cnt]);
+                    if(color != curr_color){
+                        curr_color = color;
+                        char buffer[16];
+                        int clength = snprintf(buffer, sizeof(buffer), "\x1b[%dm", color);
+                        abAppend(ab, buffer, clength);
+                    }
                     abAppend(ab, &c[cnt], 1);
+                }
             }
+            abAppend(ab, "\x1b[39m", 5);
         }
 
         abAppend(ab, "\x1b[K", 3); // erase in-line [http://vt100.net/docs/vt100-ug/chapter3.html#EL]
