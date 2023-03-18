@@ -18,7 +18,7 @@
 #include <unistd.h>
 
 /*** defines ***/
-#define ASCEND_VERSION "3.1.125 -stable"
+#define ASCEND_VERSION "3.1.126 -stable"
 #define ASCEND_TAB_STOP 8
 #define ASCEND_QUIT_TIMES 2
 
@@ -250,6 +250,17 @@ void editorUpdateSyntax(erow *row){
     for(cnt = 0; cnt < row->rowsize; cnt++){
         if(isdigit(row->render[cnt]))
             row->highlight[cnt] = HL_NUMBER;
+    }
+}
+
+int editorSyntaxToColor(int highlight){
+    switch (highlight)
+    {
+    case HL_NUMBER:
+        return 31;
+    
+    default:
+        return 37;
     }
 }
 
