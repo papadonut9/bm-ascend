@@ -18,7 +18,7 @@
 #include <unistd.h>
 
 /*** defines ***/
-#define ASCEND_VERSION "3.3.129 -stable"
+#define ASCEND_VERSION "3.3.130 -stable"
 #define ASCEND_TAB_STOP 8
 #define ASCEND_QUIT_TIMES 2
 
@@ -547,6 +547,14 @@ void editorFindCallback(char *query, int key)
 {
     static int last_match = -1;
     static int direction = 1;
+    static int saved_highlight_line;
+    static char *saved_highlight = NULL;
+
+    if(saved_highlight){
+        memcpy(E.row[saved_highlight_line].highlight, saved_highlight, E.row[saved_highlight_line].rowsize);
+        free(saved_highlight);
+        saved_highlight = NULL;
+    }
 
     if (key == '\r' || key == '\x1b')
     {
@@ -589,6 +597,10 @@ void editorFindCallback(char *query, int key)
             E.cy = current;
             E.cx = editorRowRxToCx(row, match - row->render);
             E.rowoffset = E.numrows;
+
+            saved_highlight_line = current;
+            saved_highlight = malloc(row->rowsize);
+            memcpy(saved_highlight, row->highlight, row->rowsize);
 
             memset(&row->highlight[match - row->render], HL_MATCH, strlen(query));
             break;
