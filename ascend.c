@@ -18,7 +18,7 @@
 #include <unistd.h>
 
 /*** defines ***/
-#define ASCEND_VERSION "3.2.129 -stable"
+#define ASCEND_VERSION "3.3.129 -stable"
 #define ASCEND_TAB_STOP 8
 #define ASCEND_QUIT_TIMES 2
 
@@ -589,6 +589,8 @@ void editorFindCallback(char *query, int key)
             E.cy = current;
             E.cx = editorRowRxToCx(row, match - row->render);
             E.rowoffset = E.numrows;
+
+            memset(&row->highlight[match - row->render], HL_MATCH, strlen(query));
             break;
         }
     }
