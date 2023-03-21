@@ -18,7 +18,7 @@
 #include <unistd.h>
 
 /*** defines ***/
-#define ASCEND_VERSION "3.3.131 -stable"
+#define ASCEND_VERSION "3.3.132 -stable"
 #define ASCEND_TAB_STOP 8
 #define ASCEND_QUIT_TIMES 2
 
@@ -242,6 +242,15 @@ int getWindowSize(int *rows, int *cols)
 }
 
 /***  syntax highlighting  ***/
+
+int is_separator(int c){
+   
+    return 
+        isspace(c) ||
+        c == '\0' ||
+        strchr(",.()+-/*=~%<>[];", c) != NULL;
+
+}
 
 void editorUpdateSyntax(erow *row){
     row->highlight = realloc(row->highlight, row->rowsize);
