@@ -18,7 +18,7 @@
 #include <unistd.h>
 
 /*** defines ***/
-#define ASCEND_VERSION "3.4.136 -stable"
+#define ASCEND_VERSION "3.4.137 -stable"
 #define ASCEND_TAB_STOP 8
 #define ASCEND_QUIT_TIMES 2
 
@@ -316,6 +316,44 @@ int editorSyntaxToColor(int highlight){
 
     default:
         return 37;
+    }
+}
+
+void editorSelectSyntaxHighlight(){
+    E.syntax = NULL;
+
+    if(E.filename == NULL)
+        return;
+
+    char *extension = strchr(E.filename, '.');
+
+    for(unsigned int j = 0; j < HLDB_ENTRIES; j++){
+        struct editorSyntax *syntax = &HLDB[j]; 
+        unsigned int i = 0;
+
+        while(syntax->filematch[i]){
+            int is_extension = (syntax->filematch[i][0] == '.');
+            if(
+                (is_extension && 
+                 extension && 
+                 !strcmp(
+                    extension, 
+                    syntax->filematch[i]
+                    )
+                ) 
+                || 
+                (!is_extension &&
+                 strstr(
+                    E.filename, 
+                    syntax->filematch[i]
+                    )
+                )
+            ){
+                E.syntax = syntax;
+                return;
+            }
+            i++;
+        }
     }
 }
 
