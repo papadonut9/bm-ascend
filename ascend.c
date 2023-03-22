@@ -18,7 +18,7 @@
 #include <unistd.h>
 
 /*** defines ***/
-#define ASCEND_VERSION "3.9.154 -stable"
+#define ASCEND_VERSION "3.9.155 -stable"
 #define ASCEND_TAB_STOP 8
 #define ASCEND_QUIT_TIMES 2
 
@@ -596,6 +596,9 @@ void editorDeleteRow(int pos)
 
     editorFreeRow(&E.row[pos]);
     memmove(&E.row[pos], &E.row[pos + 1], sizeof(erow) * (E.numrows - pos - 1));
+    for(int cnt = pos; cnt < E.numrows - 1; cnt++)
+        E.row[cnt].index--;
+    
     E.numrows--;
     E.dirty++;
 }
@@ -607,6 +610,8 @@ void editorInsertRow(int pos, char *s, size_t len)
 
     E.row = realloc(E.row, sizeof(erow) * (E.numrows + 1));
     memmove(&E.row[pos + 1], &E.row[pos], sizeof(erow) * (E.numrows - pos));
+    for(int cnt = pos + 1; cnt <= E.numrows; cnt++)
+        E.row[cnt].index++;
 
     E.row[pos].index = pos;
 
