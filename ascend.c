@@ -18,7 +18,7 @@
 #include <unistd.h>
 
 /*** defines ***/
-#define ASCEND_VERSION "3.9.152 -stable"
+#define ASCEND_VERSION "3.9.153 -stable"
 #define ASCEND_TAB_STOP 8
 #define ASCEND_QUIT_TIMES 2
 
@@ -333,7 +333,7 @@ void editorUpdateSyntax(erow *row)
                                            ? row->highlight[cnt - 1]
                                            : HL_NORMAL;
 
-        if (scs_len && !in_string)
+        if (scs_len && !in_string && !in_comment)
         {
             if (!strncmp(&row->render[cnt], scs, scs_len))
             {
