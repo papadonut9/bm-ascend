@@ -18,7 +18,7 @@
 #include <unistd.h>
 
 /*** defines ***/
-#define ASCEND_VERSION "3.8.148 -stable"
+#define ASCEND_VERSION "3.8.149 -stable"
 #define ASCEND_TAB_STOP 8
 #define ASCEND_QUIT_TIMES 2
 
@@ -947,6 +947,12 @@ void editorDrawRows(struct abuf *ab)
                     abAppend(ab, "\x1b[7m", 4);
                     abAppend(ab, &sym, 1);
                     abAppend(ab, "\x1b[m", 3);
+                    
+                    if(curr_color != -1){
+                        char buffer[16];
+                        int clength = snprintf(buffer, sizeof(buffer), "\x1b[%dm", curr_color);
+                        abAppend(ab, buffer, clength);
+                    }
                 }
                 else if (highlight[cnt] == HL_NORMAL)
                 {
