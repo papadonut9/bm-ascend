@@ -18,7 +18,7 @@
 #include <unistd.h>
 
 /*** defines ***/
-#define ASCEND_VERSION "3.9.151 -stable"
+#define ASCEND_VERSION "3.9.152 -stable"
 #define ASCEND_TAB_STOP 8
 #define ASCEND_QUIT_TIMES 2
 
@@ -323,6 +323,7 @@ void editorUpdateSyntax(erow *row)
 
     int prev_separator = 1;
     int in_string = 0;
+    int in_comment = 0;
 
     int cnt = 0;
     while (cnt < row->rowsize)
@@ -338,6 +339,29 @@ void editorUpdateSyntax(erow *row)
             {
                 memset(&row->highlight[cnt], HL_COMMENT, row->rowsize - cnt);
                 break;
+            }
+        }
+
+        if(mcs_len && mce_len && !in_string){
+            if(in_comment){
+                row->highlight[cnt] = HL_MLCOMMENT;
+                if(!strncmp(&row->render[cnt], mce, mce_len)){
+                    memset(&row->highlight[cnt], HL_MLCOMMENT, mce_len);
+                    cnt += mce_len;
+                    in_comment = 0;
+                    prev_separator = 1;
+                    continue;
+                }
+                else{
+                    cnt++;
+                    continue;
+                }
+            }
+            else if(!strncmp(&row->render[cnt], mcs, mcs_len)){
+                memset(&row->highlight[cnt], HL_MLCOMMENT, mcs_len);
+                cnt += mcs_len;
+                in_comment = 1;
+                continue;
             }
         }
 
