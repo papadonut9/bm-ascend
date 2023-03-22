@@ -18,7 +18,7 @@
 #include <unistd.h>
 
 /*** defines ***/
-#define ASCEND_VERSION "3.6.144 -stable"
+#define ASCEND_VERSION "3.7.144 -stable"
 #define ASCEND_TAB_STOP 8
 #define ASCEND_QUIT_TIMES 2
 
@@ -289,6 +289,11 @@ void editorUpdateSyntax(erow *row)
     if (E.syntax == NULL)
         return;
 
+    char *scs = E.syntax->singleline_comment_start;
+    int scs_len = scs
+                    ? strlen(scs)
+                    :0;
+
     int prev_separator = 1;
     int in_string = 0;
 
@@ -299,6 +304,13 @@ void editorUpdateSyntax(erow *row)
         unsigned char prev_highlight = (cnt > 0)
                                            ? row->highlight[cnt - 1]
                                            : HL_NORMAL;
+
+        if(scs_len && !in_string){
+            if(!strncmp(&row->render[cnt], scs, scs_len)){
+                memset(&row->highlight[cnt], HL_COMMENT, row->rowsize - cnt);
+                break;
+            }
+        }
 
         if (E.syntax->flags & HL_HIGHLIGHT_STRINGS)
         {
