@@ -18,7 +18,7 @@
 #include <unistd.h>
 
 /*** defines ***/
-#define ASCEND_VERSION "3.7.144 -stable"
+#define ASCEND_VERSION "3.8.147 -stable"
 #define ASCEND_TAB_STOP 8
 #define ASCEND_QUIT_TIMES 2
 
@@ -42,6 +42,8 @@ enum editorHighlight
 {
     HL_NORMAL = 0,
     HL_COMMENT,
+    HL_KEYWORD1,
+    HL_KEYWORD2,
     HL_STRING,
     HL_NUMBER,
     HL_MATCH
@@ -56,6 +58,7 @@ struct editorSyntax
 {
     char *filetype;
     char **filematch;
+    char **keywords;
     char *singleline_comment_start;
     int flags;
 };
@@ -92,11 +95,19 @@ struct editorConfig E;
 /***  filetypes  ***/
 
 char *C_Highlight_Extensions[] = {".c", ".h", ".cpp", NULL};
+char *C_Highlight_Keywords[] = {
+    "switch", "if", "while", "for", "break", "continue", "return", "else",
+    "struct", "union", "typedef", "static", "enum", "class", "case",
+    
+    "int|", "long|", "double|", "float|", "char|", "unsigned|", "signed|",
+    "void|", NULL
+};
 
 struct editorSyntax HLDB[] = {
     {
         "c",
         C_Highlight_Extensions,
+        C_Highlight_Keywords,
         "//",
         HL_HIGHLIGHT_NUMBERS | HL_HIGHLIGHT_STRINGS,
     },
@@ -289,6 +300,8 @@ void editorUpdateSyntax(erow *row)
     if (E.syntax == NULL)
         return;
 
+    char **keywords = E.syntax->keywords;
+
     char *scs = E.syntax->singleline_comment_start;
     int scs_len = scs
                     ? strlen(scs)
@@ -354,6 +367,36 @@ void editorUpdateSyntax(erow *row)
             }
         }
 
+        if(prev_separator){
+            int j;
+            for (j = 0; keywords[j]; j++){
+                int klen = strlen(keywords[j]);
+                int kw2 = keywords[j][klen - 1] == '|';
+
+                if(kw2)
+                    klen--;
+
+                if(!strncmp(&row->render[cnt], keywords[j], klen) &&
+                    isSeparator(row->render[cnt + klen])){
+                        memset(
+                            &row->highlight[cnt], 
+                            
+                            kw2
+                            ? HL_KEYWORD2
+                            :HL_KEYWORD1,
+                            
+                            klen);
+
+                    cnt += klen;
+                    break;
+                }
+            }
+            if(keywords[j] != NULL){
+                prev_separator = 0;
+                continue;
+            }
+        }
+        
         prev_separator = isSeparator(c);
         cnt++;
     }
@@ -365,6 +408,12 @@ int editorSyntaxToColor(int highlight)
     {
     case HL_COMMENT:
         return 90;
+
+    case HL_KEYWORD1:
+        return 33;
+
+    case HL_KEYWORD2:
+        return 34;
 
     case HL_STRING:
         return 35;
