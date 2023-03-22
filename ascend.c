@@ -61,6 +61,8 @@ struct editorSyntax
     char **filematch;
     char **keywords;
     char *singleline_comment_start;
+    char *multiline_comment_start;
+    char *multiline_comment_end;
     int flags;
 };
 
@@ -108,7 +110,7 @@ struct editorSyntax HLDB[] = {
         "c",
         C_Highlight_Extensions,
         C_Highlight_Keywords,
-        "//",
+        "//", "/*", "*/",
         HL_HIGHLIGHT_NUMBERS | HL_HIGHLIGHT_STRINGS,
     },
 };
