@@ -18,7 +18,7 @@
 #include <unistd.h>
 
 /*** defines ***/
-#define ASCEND_VERSION "3.9.155 -stable"
+#define ASCEND_VERSION "3.9.156 -stable"
 #define ASCEND_TAB_STOP 8
 #define ASCEND_QUIT_TIMES 2
 
@@ -325,7 +325,7 @@ void editorUpdateSyntax(erow *row)
 
     int prev_separator = 1;
     int in_string = 0;
-    int in_comment = 0;
+    int in_comment = (row->index > 0 && E.row[row->index - 1].highlight_open_comment);
 
     int cnt = 0;
     while (cnt < row->rowsize)
@@ -446,6 +446,12 @@ void editorUpdateSyntax(erow *row)
         prev_separator = isSeparator(c);
         cnt++;
     }
+
+    int changed = (row->highlight_open_comment != in_comment);
+    row->highlight_open_comment = in_comment;
+
+    if(changed && row->index + 1 < E.numrows)
+        editorUpdateSyntax(&E.row[row->index + 1]);
 }
 
 int editorSyntaxToColor(int highlight)
