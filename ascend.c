@@ -18,7 +18,7 @@
 #include <unistd.h>
 
 /*** defines ***/
-#define ASCEND_VERSION "3.4.137 -stable"
+#define ASCEND_VERSION "3.5.137 -stable"
 #define ASCEND_TAB_STOP 8
 #define ASCEND_QUIT_TIMES 2
 
@@ -574,6 +574,8 @@ void editorOpen(char *filename)
     free(E.filename);
     E.filename = strdup(filename);
 
+    editorSelectSyntaxHighlight();
+
     FILE *fp = fopen(filename, "r");
     if (!fp)
         errhandl("fopen");
@@ -603,6 +605,7 @@ void editorSave()
             editorSetStatusMsg("Save cancelled successfully!!");
             return;
         }
+        editorSelectSyntaxHighlight();
     }
 
     int len;
