@@ -18,7 +18,7 @@
 #include <unistd.h>
 
 /*** defines ***/
-#define ASCEND_VERSION "3.5.137 -stable"
+#define ASCEND_VERSION "3.5.138 -stable"
 #define ASCEND_TAB_STOP 8
 #define ASCEND_QUIT_TIMES 2
 
@@ -350,6 +350,11 @@ void editorSelectSyntaxHighlight(){
                 )
             ){
                 E.syntax = syntax;
+
+                int filerow;
+                for(filerow = 0; filerow < E.numrows; filerow++)
+                    editorUpdateSyntax(&E.row[filerow]);
+
                 return;
             }
             i++;
