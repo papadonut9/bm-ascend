@@ -18,7 +18,7 @@
 #include <unistd.h>
 
 /*** defines ***/
-#define ASCEND_VERSION "3.8.147 -stable"
+#define ASCEND_VERSION "3.9.149 -stable"
 #define ASCEND_TAB_STOP 8
 #define ASCEND_QUIT_TIMES 2
 
@@ -98,10 +98,9 @@ char *C_Highlight_Extensions[] = {".c", ".h", ".cpp", NULL};
 char *C_Highlight_Keywords[] = {
     "switch", "if", "while", "for", "break", "continue", "return", "else",
     "struct", "union", "typedef", "static", "enum", "class", "case",
-    
+
     "int|", "long|", "double|", "float|", "char|", "unsigned|", "signed|",
-    "void|", NULL
-};
+    "void|", NULL};
 
 struct editorSyntax HLDB[] = {
     {
@@ -304,8 +303,8 @@ void editorUpdateSyntax(erow *row)
 
     char *scs = E.syntax->singleline_comment_start;
     int scs_len = scs
-                    ? strlen(scs)
-                    :0;
+                      ? strlen(scs)
+                      : 0;
 
     int prev_separator = 1;
     int in_string = 0;
@@ -318,8 +317,10 @@ void editorUpdateSyntax(erow *row)
                                            ? row->highlight[cnt - 1]
                                            : HL_NORMAL;
 
-        if(scs_len && !in_string){
-            if(!strncmp(&row->render[cnt], scs, scs_len)){
+        if (scs_len && !in_string)
+        {
+            if (!strncmp(&row->render[cnt], scs, scs_len))
+            {
                 memset(&row->highlight[cnt], HL_COMMENT, row->rowsize - cnt);
                 break;
             }
@@ -367,36 +368,40 @@ void editorUpdateSyntax(erow *row)
             }
         }
 
-        if(prev_separator){
+        if (prev_separator)
+        {
             int j;
-            for (j = 0; keywords[j]; j++){
+            for (j = 0; keywords[j]; j++)
+            {
                 int klen = strlen(keywords[j]);
                 int kw2 = keywords[j][klen - 1] == '|';
 
-                if(kw2)
+                if (kw2)
                     klen--;
 
-                if(!strncmp(&row->render[cnt], keywords[j], klen) &&
-                    isSeparator(row->render[cnt + klen])){
-                        memset(
-                            &row->highlight[cnt], 
-                            
-                            kw2
+                if (!strncmp(&row->render[cnt], keywords[j], klen) &&
+                    isSeparator(row->render[cnt + klen]))
+                {
+                    memset(
+                        &row->highlight[cnt],
+
+                        kw2
                             ? HL_KEYWORD2
-                            :HL_KEYWORD1,
-                            
-                            klen);
+                            : HL_KEYWORD1,
+
+                        klen);
 
                     cnt += klen;
                     break;
                 }
             }
-            if(keywords[j] != NULL){
+            if (keywords[j] != NULL)
+            {
                 prev_separator = 0;
                 continue;
             }
         }
-        
+
         prev_separator = isSeparator(c);
         cnt++;
     }
@@ -939,7 +944,24 @@ void editorDrawRows(struct abuf *ab)
 
             for (cnt = 0; cnt < len; cnt++)
             {
-                if (highlight[cnt] == HL_NORMAL)
+                if (iscntrl(c[cnt]))
+                {
+                    char sym = (c[cnt] < 26)
+                                   ? '@' + c[cnt]
+                                   : '?';
+
+                    abAppend(ab, "\x1b[7m", 4);
+                    abAppend(ab, &sym, 1);
+                    abAppend(ab, "\x1b[m", 3);
+
+                    if (curr_color != -1)
+                    {
+                        char buffer[16];
+                        int clength = snprintf(buffer, sizeof(buffer), "\x1b[%dm", curr_color);
+                        abAppend(ab, buffer, clength);
+                    }
+                }
+                else if (highlight[cnt] == HL_NORMAL)
                 {
                     if (curr_color != -1)
                     {
