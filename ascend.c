@@ -76,6 +76,7 @@ struct editorConfig
     char *filename; // status bar only
     char statusmsg[80];
     time_t statusmsg_time;
+    struct editorSyntax *syntax;
     struct termios orig_termios;
 };
 
@@ -1082,6 +1083,7 @@ void editorInit()
     E.filename = NULL;
     E.statusmsg[0] = '\0';
     E.statusmsg_time = 0;
+    E.syntax = NULL;
 
     if (getWindowSize(&E.screenrows, &E.screencols) == -1)
         errhandl("getWindowSize");
