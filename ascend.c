@@ -18,7 +18,7 @@
 #include <unistd.h>
 
 /*** defines ***/
-#define ASCEND_VERSION "3.6.143 -stable"
+#define ASCEND_VERSION "3.6.144 -stable"
 #define ASCEND_TAB_STOP 8
 #define ASCEND_QUIT_TIMES 2
 
@@ -56,6 +56,7 @@ struct editorSyntax
 {
     char *filetype;
     char **filematch;
+    char *singleline_comment_start;
     int flags;
 };
 
@@ -96,6 +97,7 @@ struct editorSyntax HLDB[] = {
     {
         "c",
         C_Highlight_Extensions,
+        "//",
         HL_HIGHLIGHT_NUMBERS | HL_HIGHLIGHT_STRINGS,
     },
 };
