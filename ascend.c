@@ -18,7 +18,7 @@
 #include <unistd.h>
 
 /*** defines ***/
-#define ASCEND_VERSION "3.5.138 -stable"
+#define ASCEND_VERSION "3.6.142 -stable"
 #define ASCEND_TAB_STOP 8
 #define ASCEND_QUIT_TIMES 2
 
@@ -41,11 +41,13 @@ enum editorKey
 enum editorHighlight
 {
     HL_NORMAL = 0,
+    HL_STRING,
     HL_NUMBER,
     HL_MATCH
 };
 
 #define HL_HIGHLIGHT_NUMBERS (1 << 0)
+#define HL_HIGHLIGHT_STRINGS (1 << 1)
 
 /*** data ***/
 
@@ -90,9 +92,11 @@ struct editorConfig E;
 char *C_Highlight_Extensions[] = {".c", ".h", ".cpp", NULL};
 
 struct editorSyntax HLDB[] = {
-    {"c",
-     C_Highlight_Extensions,
-     HL_HIGHLIGHT_NUMBERS},
+    {
+        "c",
+        C_Highlight_Extensions,
+        HL_HIGHLIGHT_NUMBERS | HL_HIGHLIGHT_STRINGS,
+    },
 };
 
 #define HLDB_ENTRIES (sizeof(HLDB) / sizeof(HLDB[0]))
@@ -283,6 +287,7 @@ void editorUpdateSyntax(erow *row)
         return;
 
     int prev_separator = 1;
+    int in_string = 0;
 
     int cnt = 0;
     while (cnt < row->rowsize)
@@ -291,6 +296,37 @@ void editorUpdateSyntax(erow *row)
         unsigned char prev_highlight = (cnt > 0)
                                            ? row->highlight[cnt - 1]
                                            : HL_NORMAL;
+
+        if (E.syntax->flags & HL_HIGHLIGHT_STRINGS)
+        {
+            if (in_string)
+            {
+                row->highlight[cnt] = HL_STRING;
+
+                if (c == '\\' && cnt + 1 < row->rowsize)
+                {
+                    row->highlight[cnt + 1] = HL_STRING;
+                    cnt += 2;
+                    continue;
+                }
+
+                if (c == in_string)
+                    in_string = 0;
+                cnt++;
+                prev_separator = 1;
+                continue;
+            }
+            else
+            {
+                if (c == '"' || c == '\'')
+                {
+                    in_string = c;
+                    row->highlight[cnt] = HL_STRING;
+                    cnt++;
+                    continue;
+                }
+            }
+        }
 
         if (E.syntax->flags & HL_HIGHLIGHT_NUMBERS)
         {
@@ -312,6 +348,9 @@ int editorSyntaxToColor(int highlight)
 {
     switch (highlight)
     {
+    case HL_STRING:
+        return 35;
+
     case HL_NUMBER:
         return 31;
 
