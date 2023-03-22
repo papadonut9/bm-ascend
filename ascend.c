@@ -18,7 +18,7 @@
 #include <unistd.h>
 
 /*** defines ***/
-#define ASCEND_VERSION "3.5.142 -stable"
+#define ASCEND_VERSION "3.6.142 -stable"
 #define ASCEND_TAB_STOP 8
 #define ASCEND_QUIT_TIMES 2
 
@@ -93,10 +93,10 @@ char *C_Highlight_Extensions[] = {".c", ".h", ".cpp", NULL};
 
 struct editorSyntax HLDB[] = {
     {
-    "c",
-     C_Highlight_Extensions,
-     HL_HIGHLIGHT_NUMBERS | HL_HIGHLIGHT_STRINGS,
-     },
+        "c",
+        C_Highlight_Extensions,
+        HL_HIGHLIGHT_NUMBERS | HL_HIGHLIGHT_STRINGS,
+    },
 };
 
 #define HLDB_ENTRIES (sizeof(HLDB) / sizeof(HLDB[0]))
@@ -297,24 +297,29 @@ void editorUpdateSyntax(erow *row)
                                            ? row->highlight[cnt - 1]
                                            : HL_NORMAL;
 
-        if(E.syntax->flags & HL_HIGHLIGHT_STRINGS){
-            if(in_string){
+        if (E.syntax->flags & HL_HIGHLIGHT_STRINGS)
+        {
+            if (in_string)
+            {
                 row->highlight[cnt] = HL_STRING;
 
-                if(c == '\\' && cnt + 1 < row->rowsize){
+                if (c == '\\' && cnt + 1 < row->rowsize)
+                {
                     row->highlight[cnt + 1] = HL_STRING;
                     cnt += 2;
                     continue;
                 }
 
-                if(c == in_string)
-                    in_string = 0;                
+                if (c == in_string)
+                    in_string = 0;
                 cnt++;
                 prev_separator = 1;
                 continue;
             }
-            else{
-                if(c == '"' || c == '\''){
+            else
+            {
+                if (c == '"' || c == '\'')
+                {
                     in_string = c;
                     row->highlight[cnt] = HL_STRING;
                     cnt++;
