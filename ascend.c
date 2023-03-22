@@ -18,7 +18,7 @@
 #include <unistd.h>
 
 /*** defines ***/
-#define ASCEND_VERSION "3.6.142 -stable"
+#define ASCEND_VERSION "3.6.143 -stable"
 #define ASCEND_TAB_STOP 8
 #define ASCEND_QUIT_TIMES 2
 
@@ -41,6 +41,7 @@ enum editorKey
 enum editorHighlight
 {
     HL_NORMAL = 0,
+    HL_COMMENT,
     HL_STRING,
     HL_NUMBER,
     HL_MATCH
@@ -348,6 +349,9 @@ int editorSyntaxToColor(int highlight)
 {
     switch (highlight)
     {
+    case HL_COMMENT:
+        return 90;
+
     case HL_STRING:
         return 35;
 
