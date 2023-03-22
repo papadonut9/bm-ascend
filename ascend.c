@@ -18,7 +18,7 @@
 #include <unistd.h>
 
 /*** defines ***/
-#define ASCEND_VERSION "3.5.141 -stable"
+#define ASCEND_VERSION "3.5.142 -stable"
 #define ASCEND_TAB_STOP 8
 #define ASCEND_QUIT_TIMES 2
 
@@ -300,9 +300,15 @@ void editorUpdateSyntax(erow *row)
         if(E.syntax->flags & HL_HIGHLIGHT_STRINGS){
             if(in_string){
                 row->highlight[cnt] = HL_STRING;
+
+                if(c == '\\' && cnt + 1 < row->rowsize){
+                    row->highlight[cnt + 1] = HL_STRING;
+                    cnt += 2;
+                    continue;
+                }
+
                 if(c == in_string)
-                    in_string = 0;
-                
+                    in_string = 0;                
                 cnt++;
                 prev_separator = 1;
                 continue;
