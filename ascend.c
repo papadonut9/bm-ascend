@@ -18,7 +18,7 @@
 #include <unistd.h>
 
 /*** defines ***/
-#define ASCEND_VERSION "3.9.153 -stable"
+#define ASCEND_VERSION "3.9.154 -stable"
 #define ASCEND_TAB_STOP 8
 #define ASCEND_QUIT_TIMES 2
 
@@ -68,11 +68,13 @@ struct editorSyntax
 
 typedef struct erow
 {
+    int index;
     int size;
     int rowsize;
     char *chars;
     char *render;
     unsigned char *highlight;
+    int highlight_open_comment;    
 } erow;
 
 struct editorConfig
@@ -606,6 +608,8 @@ void editorInsertRow(int pos, char *s, size_t len)
     E.row = realloc(E.row, sizeof(erow) * (E.numrows + 1));
     memmove(&E.row[pos + 1], &E.row[pos], sizeof(erow) * (E.numrows - pos));
 
+    E.row[pos].index = pos;
+
     E.row[pos].size = len;
     E.row[pos].chars = malloc(len + 1);
     memcpy(E.row[pos].chars, s, len);
@@ -614,6 +618,7 @@ void editorInsertRow(int pos, char *s, size_t len)
     E.row[pos].rowsize = 0;
     E.row[pos].render = NULL;
     E.row[pos].highlight = NULL;
+    E.row[pos].highlight_open_comment = 0;
     editorUpdateRow(&E.row[pos]);
 
     E.numrows++;
