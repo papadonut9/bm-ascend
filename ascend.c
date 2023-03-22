@@ -18,7 +18,7 @@
 #include <unistd.h>
 
 /*** defines ***/
-#define ASCEND_VERSION "3.4.133 -stable"
+#define ASCEND_VERSION "3.4.134 -stable"
 #define ASCEND_TAB_STOP 8
 #define ASCEND_QUIT_TIMES 2
 
@@ -44,8 +44,15 @@ enum editorHighlight{
     HL_MATCH
 };
 
+#define HL_HIGHLIGHT_NUMBERS (1<<0)
+
 /*** data ***/
 
+struct editorSyntax{
+    char *filetype;
+    char ** filematch;
+    int flags;
+};
 typedef struct erow
 {
     int size;
