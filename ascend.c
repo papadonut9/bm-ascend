@@ -18,7 +18,7 @@
 #include <unistd.h>
 
 /*** defines ***/
-#define ASCEND_VERSION "3.3.133 -stable"
+#define ASCEND_VERSION "3.4.133 -stable"
 #define ASCEND_TAB_STOP 8
 #define ASCEND_QUIT_TIMES 2
 
@@ -265,7 +265,7 @@ void editorUpdateSyntax(erow *row){
                                         ? row->highlight[cnt - 1]
                                         : HL_NORMAL;
 
-        if(isdigit(c) && (prev_separator || prev_highlight == HL_NUMBER)){
+        if((isdigit(c) && (prev_separator || prev_highlight == HL_NUMBER)) || (c == '.' && prev_highlight == HL_NUMBER)){
             row->highlight[cnt] = HL_NUMBER;
             cnt++;
             prev_separator = 0;
