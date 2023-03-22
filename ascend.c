@@ -18,7 +18,7 @@
 #include <unistd.h>
 
 /*** defines ***/
-#define ASCEND_VERSION "3.4.135 -stable"
+#define ASCEND_VERSION "3.4.136 -stable"
 #define ASCEND_TAB_STOP 8
 #define ASCEND_QUIT_TIMES 2
 
@@ -53,6 +53,7 @@ struct editorSyntax{
     char ** filematch;
     int flags;
 };
+
 typedef struct erow
 {
     int size;
@@ -278,6 +279,9 @@ void editorUpdateSyntax(erow *row){
     row->highlight = realloc(row->highlight, row->rowsize);
     memset(row->highlight, HL_NORMAL, row->rowsize);
 
+    if(E.syntax == NULL)
+        return;
+
     int prev_separator = 1;
 
     int cnt = 0;
@@ -287,11 +291,13 @@ void editorUpdateSyntax(erow *row){
                                         ? row->highlight[cnt - 1]
                                         : HL_NORMAL;
 
-        if((isdigit(c) && (prev_separator || prev_highlight == HL_NUMBER)) || (c == '.' && prev_highlight == HL_NUMBER)){
-            row->highlight[cnt] = HL_NUMBER;
-            cnt++;
-            prev_separator = 0;
-            continue;
+        if(E.syntax->flags & HL_HIGHLIGHT_NUMBERS){
+            if((isdigit(c) && (prev_separator || prev_highlight == HL_NUMBER)) || (c == '.' && prev_highlight == HL_NUMBER)){
+                row->highlight[cnt] = HL_NUMBER;
+                cnt++;
+                prev_separator = 0;
+                continue;
+            }
         }
         
         prev_separator = isSeparator(c);
