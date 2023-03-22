@@ -38,19 +38,21 @@ enum editorKey
     PAGE_DOWN
 };
 
-enum editorHighlight{
+enum editorHighlight
+{
     HL_NORMAL = 0,
     HL_NUMBER,
     HL_MATCH
 };
 
-#define HL_HIGHLIGHT_NUMBERS (1<<0)
+#define HL_HIGHLIGHT_NUMBERS (1 << 0)
 
 /*** data ***/
 
-struct editorSyntax{
+struct editorSyntax
+{
     char *filetype;
-    char ** filematch;
+    char **filematch;
     int flags;
 };
 
@@ -88,11 +90,9 @@ struct editorConfig E;
 char *C_Highlight_Extensions[] = {".c", ".h", ".cpp", NULL};
 
 struct editorSyntax HLDB[] = {
-    {
-        "c",
-        C_Highlight_Extensions,
-        HL_HIGHLIGHT_NUMBERS
-    },
+    {"c",
+     C_Highlight_Extensions,
+     HL_HIGHLIGHT_NUMBERS},
 };
 
 #define HLDB_ENTRIES (sizeof(HLDB) / sizeof(HLDB[0]))
@@ -266,51 +266,55 @@ int getWindowSize(int *rows, int *cols)
 
 /***  syntax highlighting  ***/
 
-int isSeparator(int c){
-   
-    return 
-        isspace(c) ||
-        c == '\0' ||
-        strchr(",.()+-/*=~%<>[];", c) != NULL;
+int isSeparator(int c)
+{
 
+    return isspace(c) ||
+           c == '\0' ||
+           strchr(",.()+-/*=~%<>[];", c) != NULL;
 }
 
-void editorUpdateSyntax(erow *row){
+void editorUpdateSyntax(erow *row)
+{
     row->highlight = realloc(row->highlight, row->rowsize);
     memset(row->highlight, HL_NORMAL, row->rowsize);
 
-    if(E.syntax == NULL)
+    if (E.syntax == NULL)
         return;
 
     int prev_separator = 1;
 
     int cnt = 0;
-    while (cnt < row->rowsize){
+    while (cnt < row->rowsize)
+    {
         char c = row->render[cnt];
         unsigned char prev_highlight = (cnt > 0)
-                                        ? row->highlight[cnt - 1]
-                                        : HL_NORMAL;
+                                           ? row->highlight[cnt - 1]
+                                           : HL_NORMAL;
 
-        if(E.syntax->flags & HL_HIGHLIGHT_NUMBERS){
-            if((isdigit(c) && (prev_separator || prev_highlight == HL_NUMBER)) || (c == '.' && prev_highlight == HL_NUMBER)){
+        if (E.syntax->flags & HL_HIGHLIGHT_NUMBERS)
+        {
+            if ((isdigit(c) && (prev_separator || prev_highlight == HL_NUMBER)) || (c == '.' && prev_highlight == HL_NUMBER))
+            {
                 row->highlight[cnt] = HL_NUMBER;
                 cnt++;
                 prev_separator = 0;
                 continue;
             }
         }
-        
+
         prev_separator = isSeparator(c);
         cnt++;
     }
 }
 
-int editorSyntaxToColor(int highlight){
+int editorSyntaxToColor(int highlight)
+{
     switch (highlight)
     {
     case HL_NUMBER:
         return 31;
-    
+
     case HL_MATCH:
         return 32;
 
@@ -319,40 +323,38 @@ int editorSyntaxToColor(int highlight){
     }
 }
 
-void editorSelectSyntaxHighlight(){
+void editorSelectSyntaxHighlight()
+{
     E.syntax = NULL;
 
-    if(E.filename == NULL)
+    if (E.filename == NULL)
         return;
 
     char *extension = strchr(E.filename, '.');
 
-    for(unsigned int j = 0; j < HLDB_ENTRIES; j++){
-        struct editorSyntax *syntax = &HLDB[j]; 
+    for (unsigned int j = 0; j < HLDB_ENTRIES; j++)
+    {
+        struct editorSyntax *syntax = &HLDB[j];
         unsigned int i = 0;
 
-        while(syntax->filematch[i]){
+        while (syntax->filematch[i])
+        {
             int is_extension = (syntax->filematch[i][0] == '.');
-            if(
-                (is_extension && 
-                 extension && 
+            if (
+                (is_extension &&
+                 extension &&
                  !strcmp(
-                    extension, 
-                    syntax->filematch[i]
-                    )
-                ) 
-                || 
+                     extension,
+                     syntax->filematch[i])) ||
                 (!is_extension &&
                  strstr(
-                    E.filename, 
-                    syntax->filematch[i]
-                    )
-                )
-            ){
+                     E.filename,
+                     syntax->filematch[i])))
+            {
                 E.syntax = syntax;
 
                 int filerow;
-                for(filerow = 0; filerow < E.numrows; filerow++)
+                for (filerow = 0; filerow < E.numrows; filerow++)
                     editorUpdateSyntax(&E.row[filerow]);
 
                 return;
@@ -647,7 +649,8 @@ void editorFindCallback(char *query, int key)
     static int saved_highlight_line;
     static char *saved_highlight = NULL;
 
-    if(saved_highlight){
+    if (saved_highlight)
+    {
         memcpy(E.row[saved_highlight_line].highlight, saved_highlight, E.row[saved_highlight_line].rowsize);
         free(saved_highlight);
         saved_highlight = NULL;
@@ -823,22 +826,27 @@ void editorDrawRows(struct abuf *ab)
             if (len > E.screencols)
                 len = E.screencols;
 
-            char *c  = &E.row[filerow].render[E.coloffset];
+            char *c = &E.row[filerow].render[E.coloffset];
             unsigned char *highlight = &E.row[filerow].highlight[E.coloffset];
             int curr_color = -1;
             int cnt;
-            
-            for(cnt = 0; cnt < len; cnt++){
-                if(highlight[cnt] == HL_NORMAL){
-                    if(curr_color != -1){
+
+            for (cnt = 0; cnt < len; cnt++)
+            {
+                if (highlight[cnt] == HL_NORMAL)
+                {
+                    if (curr_color != -1)
+                    {
                         abAppend(ab, "\x1b[39m", 5);
                         curr_color = -1;
                     }
                     abAppend(ab, &c[cnt], 1);
                 }
-                else{
+                else
+                {
                     int color = editorSyntaxToColor(highlight[cnt]);
-                    if(color != curr_color){
+                    if (color != curr_color)
+                    {
                         curr_color = color;
                         char buffer[16];
                         int clength = snprintf(buffer, sizeof(buffer), "\x1b[%dm", color);
@@ -873,19 +881,19 @@ void editorDrawStatusBar(struct abuf *ab)
                            : "");
 
     int rlen = snprintf(
-                rstatus, 
-                
-                sizeof(rstatus), 
-                
-                "%s | %d/%d", 
-                
-                E.syntax
-                ? E.syntax->filetype
-                : "no filetype",
+        rstatus,
 
-                E.cy + 1, 
-                
-                E.numrows);
+        sizeof(rstatus),
+
+        "%s | %d/%d",
+
+        E.syntax
+            ? E.syntax->filetype
+            : "no filetype",
+
+        E.cy + 1,
+
+        E.numrows);
 
     if (len > E.screencols)
         len = E.screencols;
@@ -1165,7 +1173,7 @@ int main(int argc, char *argv[])
         editorOpen(argv[1]);
 
     editorSetStatusMsg("HELP: ctrl-q: quit  |   ctrl-s: save    |   ctrl-f: search");
-                                                                                                                                                                                            
+
     while (1)
     {
         editorRefreshScreen();
