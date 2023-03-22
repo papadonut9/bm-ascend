@@ -18,7 +18,7 @@
 #include <unistd.h>
 
 /*** defines ***/
-#define ASCEND_VERSION "3.9.149 -stable"
+#define ASCEND_VERSION "4.0.156 -stable"
 #define ASCEND_TAB_STOP 8
 #define ASCEND_QUIT_TIMES 2
 
@@ -42,6 +42,7 @@ enum editorHighlight
 {
     HL_NORMAL = 0,
     HL_COMMENT,
+    HL_MLCOMMENT,
     HL_KEYWORD1,
     HL_KEYWORD2,
     HL_STRING,
@@ -60,16 +61,20 @@ struct editorSyntax
     char **filematch;
     char **keywords;
     char *singleline_comment_start;
+    char *multiline_comment_start;
+    char *multiline_comment_end;
     int flags;
 };
 
 typedef struct erow
 {
+    int index;
     int size;
     int rowsize;
     char *chars;
     char *render;
     unsigned char *highlight;
+    int highlight_open_comment;
 } erow;
 
 struct editorConfig
@@ -108,6 +113,8 @@ struct editorSyntax HLDB[] = {
         C_Highlight_Extensions,
         C_Highlight_Keywords,
         "//",
+        "/*",
+        "*/",
         HL_HIGHLIGHT_NUMBERS | HL_HIGHLIGHT_STRINGS,
     },
 };
@@ -302,12 +309,24 @@ void editorUpdateSyntax(erow *row)
     char **keywords = E.syntax->keywords;
 
     char *scs = E.syntax->singleline_comment_start;
+    char *mcs = E.syntax->multiline_comment_start;
+    char *mce = E.syntax->multiline_comment_end;
+
     int scs_len = scs
                       ? strlen(scs)
                       : 0;
 
+    int mcs_len = mcs
+                      ? strlen(mcs)
+                      : 0;
+
+    int mce_len = mce
+                      ? strlen(mce)
+                      : 0;
+
     int prev_separator = 1;
     int in_string = 0;
+    int in_comment = (row->index > 0 && E.row[row->index - 1].highlight_open_comment);
 
     int cnt = 0;
     while (cnt < row->rowsize)
@@ -317,12 +336,40 @@ void editorUpdateSyntax(erow *row)
                                            ? row->highlight[cnt - 1]
                                            : HL_NORMAL;
 
-        if (scs_len && !in_string)
+        if (scs_len && !in_string && !in_comment)
         {
             if (!strncmp(&row->render[cnt], scs, scs_len))
             {
                 memset(&row->highlight[cnt], HL_COMMENT, row->rowsize - cnt);
                 break;
+            }
+        }
+
+        if (mcs_len && mce_len && !in_string)
+        {
+            if (in_comment)
+            {
+                row->highlight[cnt] = HL_MLCOMMENT;
+                if (!strncmp(&row->render[cnt], mce, mce_len))
+                {
+                    memset(&row->highlight[cnt], HL_MLCOMMENT, mce_len);
+                    cnt += mce_len;
+                    in_comment = 0;
+                    prev_separator = 1;
+                    continue;
+                }
+                else
+                {
+                    cnt++;
+                    continue;
+                }
+            }
+            else if (!strncmp(&row->render[cnt], mcs, mcs_len))
+            {
+                memset(&row->highlight[cnt], HL_MLCOMMENT, mcs_len);
+                cnt += mcs_len;
+                in_comment = 1;
+                continue;
             }
         }
 
@@ -405,6 +452,12 @@ void editorUpdateSyntax(erow *row)
         prev_separator = isSeparator(c);
         cnt++;
     }
+
+    int changed = (row->highlight_open_comment != in_comment);
+    row->highlight_open_comment = in_comment;
+
+    if (changed && row->index + 1 < E.numrows)
+        editorUpdateSyntax(&E.row[row->index + 1]);
 }
 
 int editorSyntaxToColor(int highlight)
@@ -412,6 +465,7 @@ int editorSyntaxToColor(int highlight)
     switch (highlight)
     {
     case HL_COMMENT:
+    case HL_MLCOMMENT:
         return 90;
 
     case HL_KEYWORD1:
@@ -554,6 +608,9 @@ void editorDeleteRow(int pos)
 
     editorFreeRow(&E.row[pos]);
     memmove(&E.row[pos], &E.row[pos + 1], sizeof(erow) * (E.numrows - pos - 1));
+    for (int cnt = pos; cnt < E.numrows - 1; cnt++)
+        E.row[cnt].index--;
+
     E.numrows--;
     E.dirty++;
 }
@@ -565,6 +622,10 @@ void editorInsertRow(int pos, char *s, size_t len)
 
     E.row = realloc(E.row, sizeof(erow) * (E.numrows + 1));
     memmove(&E.row[pos + 1], &E.row[pos], sizeof(erow) * (E.numrows - pos));
+    for (int cnt = pos + 1; cnt <= E.numrows; cnt++)
+        E.row[cnt].index++;
+
+    E.row[pos].index = pos;
 
     E.row[pos].size = len;
     E.row[pos].chars = malloc(len + 1);
@@ -574,6 +635,7 @@ void editorInsertRow(int pos, char *s, size_t len)
     E.row[pos].rowsize = 0;
     E.row[pos].render = NULL;
     E.row[pos].highlight = NULL;
+    E.row[pos].highlight_open_comment = 0;
     editorUpdateRow(&E.row[pos]);
 
     E.numrows++;
