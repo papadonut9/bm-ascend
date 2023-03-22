@@ -18,7 +18,7 @@
 #include <unistd.h>
 
 /*** defines ***/
-#define ASCEND_VERSION "3.3.130 -stable"
+#define ASCEND_VERSION "3.4.133 -stable"
 #define ASCEND_TAB_STOP 8
 #define ASCEND_QUIT_TIMES 2
 
@@ -243,14 +243,37 @@ int getWindowSize(int *rows, int *cols)
 
 /***  syntax highlighting  ***/
 
+int isSeparator(int c){
+   
+    return 
+        isspace(c) ||
+        c == '\0' ||
+        strchr(",.()+-/*=~%<>[];", c) != NULL;
+
+}
+
 void editorUpdateSyntax(erow *row){
     row->highlight = realloc(row->highlight, row->rowsize);
     memset(row->highlight, HL_NORMAL, row->rowsize);
 
-    int cnt;
-    for(cnt = 0; cnt < row->rowsize; cnt++){
-        if(isdigit(row->render[cnt]))
+    int prev_separator = 1;
+
+    int cnt = 0;
+    while (cnt < row->rowsize){
+        char c = row->render[cnt];
+        unsigned char prev_highlight = (cnt > 0)
+                                        ? row->highlight[cnt - 1]
+                                        : HL_NORMAL;
+
+        if((isdigit(c) && (prev_separator || prev_highlight == HL_NUMBER)) || (c == '.' && prev_highlight == HL_NUMBER)){
             row->highlight[cnt] = HL_NUMBER;
+            cnt++;
+            prev_separator = 0;
+            continue;
+        }
+        
+        prev_separator = isSeparator(c);
+        cnt++;
     }
 }
 
