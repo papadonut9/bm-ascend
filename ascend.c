@@ -18,7 +18,7 @@
 #include <unistd.h>
 
 /*** defines ***/
-#define ASCEND_VERSION "3.5.139 -stable"
+#define ASCEND_VERSION "3.5.140 -stable"
 #define ASCEND_TAB_STOP 8
 #define ASCEND_QUIT_TIMES 2
 
@@ -47,6 +47,7 @@ enum editorHighlight
 };
 
 #define HL_HIGHLIGHT_NUMBERS (1 << 0)
+#define HL_HIGHLIGHT_STRINGS (1 << 1)
 
 /*** data ***/
 
@@ -91,9 +92,11 @@ struct editorConfig E;
 char *C_Highlight_Extensions[] = {".c", ".h", ".cpp", NULL};
 
 struct editorSyntax HLDB[] = {
-    {"c",
+    {
+    "c",
      C_Highlight_Extensions,
-     HL_HIGHLIGHT_NUMBERS},
+     HL_HIGHLIGHT_NUMBERS | HL_HIGHLIGHT_STRINGS,
+     },
 };
 
 #define HLDB_ENTRIES (sizeof(HLDB) / sizeof(HLDB[0]))
